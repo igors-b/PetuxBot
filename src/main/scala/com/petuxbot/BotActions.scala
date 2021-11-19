@@ -36,9 +36,10 @@ object BotActions {
     } yield ()
 
   def startGame[F[_] : TelegramClient: Sync](chat: Chat, state: GameState[F]): Scenario[F, Unit] = {
-    val p = state.players.head.hand.cards.head.suit.toString
+    val cards = state.players.head.hand.cards.map(_.toString)
+    val trumpCard = state.deck.trumpCard.toString
     for {
-      _ <- Scenario.eval(chat.send(s"Game started $p"))
+      _ <- Scenario.eval(chat.send(s"Game started, your cards: $cards. Trump card is $trumpCard"))
     } yield ()
   }
 }
