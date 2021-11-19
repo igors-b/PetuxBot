@@ -1,7 +1,6 @@
 package com.petuxbot.domain
 
 import cats.effect.Sync
-import com.petuxbot.Response
 
 final case class GameState[F[_]: Sync] (
   deck: Deck = Deck.make,
@@ -11,7 +10,7 @@ final case class GameState[F[_]: Sync] (
   whoseTurn: Option[Player] = None
 ){
 
-  def startGame(): F[GameState[F]] = {
+  def startGame(): F[Option[GameState[F]]] = {
     val hands = players.map(_ => Hand.empty)
     val result: Option[GameState[F]] = for {
       (deck, dealtHands) <- Deck.make.deal(hands)

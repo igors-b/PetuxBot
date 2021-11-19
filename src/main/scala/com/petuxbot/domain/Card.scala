@@ -23,27 +23,3 @@ case class Card(rank: Rank, suit: Suit, isTrump: Boolean = false) {
 
   override def toString: String = rank.toString + suit.toString
 }
-
-//object Card {
-//  def make(string: String): Card = string.toLowerCase().toList.map(_.toString) match {
-//    case rank::suit::_ => Card(Rank.make(rank), Suit.make(suit))
-//  }
-
-  /*
-  def make1(string: String): Either[String, Card] = string.toLowerCase().toList.map(_.toString) match {
-    case rank::suit::_ => {
-      val r: Either[String, Card] = for {
-        r <-Rank.make(rank)
-        s <- Suit.make(suit)
-      } yield Card(r, s)
-
-      r
-    }
-    case _ => Left("Errrorr")
-  }
-
-  for {
-    rank <- Rank.make()
-  }
-
-   */

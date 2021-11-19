@@ -23,13 +23,4 @@ object Suit extends Enum[Suit]{
   case object Spades extends Suit {
     override def toString: String = "s"
   }
-
-//  def make(suit: String): Suit =
-//    suit match {
-//      case "c" => Clubs
-//      case "d" => Diamonds
-//      case "h" => Hearts
-//      case "s" => Spades
-//    }
-
 }

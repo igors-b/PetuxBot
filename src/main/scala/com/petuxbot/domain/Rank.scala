@@ -47,24 +47,5 @@ object Rank extends Enum[Rank] {
   case object Two extends Rank {
     override def toString: String = "2"
   }
-
-//  def make(rank: String): Rank = {
-//    rank match {
-//      case "a" => Ace
-//      case "k" => King
-//      case "q" => Queen
-//      case "j" => Jack
-//      case "t" => Ten
-//      case "9" => Nine
-//      case "8" => Eight
-//      case "7" => Seven
-//      case "6" => Six
-//      case "5" => Five
-//      case "4" => Four
-//      case "3" => Three
-//      case "2" => Two
-//      //case _ => Left("Error invalid rank")
-//    }
-//  }
 }
 
