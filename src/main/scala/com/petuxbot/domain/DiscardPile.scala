@@ -1,16 +1,16 @@
 package com.petuxbot.domain
 
-final case class DiscardPile (cards: Vector[Card]) extends CardContainer {
+final case class DiscardPile (cards: List[Card]) extends CardContainer {
   def addCard(card: Card): DiscardPile =
     this.copy(cards = cards :+ card)
 
-  def addCards(newCards: Iterable[Card]): DiscardPile =
+  def addCards(newCards: List[Card]): DiscardPile =
     this.copy(cards = cards ++ newCards)
 
-  protected def removeCard(card: Card): DiscardPile = ???
+  def removeCard(card: Card): DiscardPile = ???
 
 }
 
 object DiscardPile {
-  def empty: DiscardPile = DiscardPile(Vector.empty[Card])
+  lazy val Empty: DiscardPile = DiscardPile(List.empty[Card])
 }

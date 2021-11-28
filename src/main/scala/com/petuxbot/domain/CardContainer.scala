@@ -1,9 +1,9 @@
 package com.petuxbot.domain
 
 trait CardContainer {
-  val cards: Vector[Card]
+  def cards: List[Card]
 
   def addCard (card: Card): CardContainer
 
-  protected def removeCard (card: Card): CardContainer
+  def removeCard (card: Card): CardContainer
 }

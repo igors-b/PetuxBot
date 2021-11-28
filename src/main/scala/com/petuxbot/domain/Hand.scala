@@ -1,14 +1,14 @@
 package com.petuxbot.domain
 
-case class Hand(cards: Vector[Card]) {
+final case class Hand(cards: List[Card]) {
 
-  def addCards(cardsToAdd: Vector[Card]): Hand = this.copy(cards ++ cardsToAdd)
+  def addCards(cardsToAdd: List[Card]): Hand = this.copy(cards ++ cardsToAdd)
 
-  protected def removeCard(card: Card): Hand =
+  def removeCard(card: Card): Hand =
     this.copy(cards filterNot (c => c == card))
 }
 
 object  Hand {
-  val initialNumberOfCards = 5
-  def empty = Hand(Vector.empty[Card])
+  val InitialNumberOfCards = 5
+  lazy val Empty= Hand(List.empty[Card])
 }

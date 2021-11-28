@@ -1,20 +1,24 @@
 package com.petuxbot.domain
+import cats.data.NonEmptyList
+
 import scala.util.Random
 import cats.implicits._
+import com.petuxbot.domain.Rank.{Ace, Jack, King, Queen, Ten}
+import com.petuxbot.domain.Suit.{Clubs, Diamonds, Hearts, Spades}
 
-final case class Deck(cards: Vector[Card], trumpCard: Card) extends CardContainer {
+final case class Deck(cards: List[Card], trumpCard: Card) extends CardContainer {
   override def addCard(card: Card): Deck = this.copy(cards :+ card)
 
-  override protected def removeCard(card: Card): Deck =
+  override def removeCard(card: Card): Deck =
     this.copy(cards filterNot (c => c == card))
 
-   def deal(hands: Vector[Hand]): Option[(Deck, Vector[Hand])] =
+   def deal(hands: List[Hand]): Option[(Deck, List[Hand])] =
    {
      if (hands.nonEmpty) {
        if (cards.nonEmpty) {
-         hands.foldLeft((Vector.empty[Hand], cards)) {
+         hands.foldLeft((List.empty[Hand], cards)) {
            case ((hands, cards), hand) =>
-             val (taken, rest) = cards.splitAt(Hand.initialNumberOfCards - hand.cards.size)
+             val (taken, rest) = cards.splitAt(Hand.InitialNumberOfCards - hand.cards.size)
              (hands :+ hand.addCards(taken), rest)
          } match {
            case (hands, cards) => (this.copy(cards = cards), hands).some
@@ -31,10 +35,21 @@ object Deck {
         Suit.values.map(suit =>
           Card(rank, suit)
         )
-      ).toVector
+      ).toList
+
+//    val ranks = NonEmptyList(Ace, List(King, Queen, Jack, Ten))
+//    val suits = NonEmptyList(Clubs, List(Diamonds, Hearts, Spades))
+//
+//    val allCards: NonEmptyList[Card] = ranks
+//      .flatMap(rank =>
+//        suits.map(suit =>
+//          Card(rank, suit)
+//        )
+//      )
 
     val shuffledCards = Random.shuffle(allCards)
-    val trumpCard = shuffledCards.last //throws NoSuchElementException
+    val trumpCard = shuffledCards.last.copy(isTrump = true)
+
 
     val shuffledCardsWithTrumps =
       shuffledCards.map(card =>

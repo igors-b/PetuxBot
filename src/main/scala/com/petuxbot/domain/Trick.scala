@@ -1,4 +1,4 @@
 package com.petuxbot.domain
 
-case class Trick(cards: Vector[Card]) extends AnyVal {
+final case class Trick(cards: List[Card]) extends AnyVal {
 }

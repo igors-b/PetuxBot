@@ -1,10 +1,10 @@
 package com.petuxbot.domain
 
-case class Board(cards: Vector[Card], cardToHit: Option[Card], strongestCard: Option[Card]) {
+final case class Board(cards: List[Card], cardToHit: Option[Card], strongestCard: Option[Card]) {
   def addCard(card: Card): Board = this.copy(cards :+ card)
 
 }
 
 object Board {
-  def empty = Board(cards = Vector.empty[Card], cardToHit = None, strongestCard = None)
+  lazy val Empty = Board(cards = List.empty[Card], cardToHit = None, strongestCard = None)
 }
