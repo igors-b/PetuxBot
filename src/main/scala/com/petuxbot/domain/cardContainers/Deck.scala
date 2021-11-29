@@ -1,10 +1,12 @@
 package com.petuxbot.domain.cardContainers
 
+import cats.Monad
 import cats.data.NonEmptyList
 import cats.implicits._
 import com.petuxbot.domain.Rank.Ranks
 import com.petuxbot.domain.Suit.Suits
 import com.petuxbot.domain.Card
+import com.petuxbot.services.Shuffle
 
 import scala.util.Random
 
@@ -35,6 +37,20 @@ final case class Deck(cards: List[Card]) extends CardContainer {
 
 object Deck {
   lazy val Empty = Deck(List.empty)
+
+  def of[F[_] : Monad](shuffle: Shuffle[F]): F[Deck] = {
+
+    val allCards: NonEmptyList[Card] = Ranks
+      .flatMap(rank => Suits.map(suit => Card(rank, suit)))
+
+    for {
+      shuffledCards           <- shuffle(allCards.toList)
+      shuffleCardsNel         = NonEmptyList.fromListUnsafe(shuffledCards)
+      trumpCard               = shuffleCardsNel.last.copy(isTrump = true)
+      shuffledCardsWithTrumps = shuffledCards
+                                 .map(card => if (card.suit == trumpCard.suit) card.copy(isTrump = true) else card)
+    } yield Deck(shuffledCardsWithTrumps)
+  }
 
   def make: Deck = {
 
