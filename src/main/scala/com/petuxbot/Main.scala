@@ -5,13 +5,19 @@ import cats.effect.{ExitCode, IO, IOApp}
 import fs2.Stream
 import com.petuxbot.BotToken.token
 import com.petuxbot.BotActions.greetings
+import com.petuxbot.domain.GameService
 
 
 object Main extends IOApp {
 
-  def run(args: List[String]): IO[ExitCode] =
-    Stream
+  def run(args: List[String]): IO[ExitCode] = {
+    for {
+      gameService <- GameService.of[IO]
+      r <- Stream
       .resource(TelegramClient.global[IO](token))
-      .flatMap { implicit client => Bot.polling[IO].follow(greetings) }
-      .compile.drain.as(ExitCode.Success)
+      .flatMap { implicit client => Bot.polling[IO].follow(greetings(gameService)) }
+        .compile.drain.as(ExitCode.Success)
+    } yield r
+
+  }
 }

@@ -6,7 +6,7 @@ import cats.implicits._
 import com.petuxbot.domain.Rank.{Ace, Jack, King, Queen, Ten}
 import com.petuxbot.domain.Suit.{Clubs, Diamonds, Hearts, Spades}
 
-final case class Deck(cards: List[Card], trumpCard: Card) extends CardContainer {
+final case class Deck(cards: List[Card]) extends CardContainer {
   override def addCard(card: Card): Deck = this.copy(cards :+ card)
 
   override def removeCard(card: Card): Deck =
@@ -29,6 +29,8 @@ final case class Deck(cards: List[Card], trumpCard: Card) extends CardContainer 
 }
 
 object Deck {
+  lazy val Empty = Deck(List.empty)
+
   def make: Deck = {
     val allCards = Rank.values
       .flatMap(rank =>
@@ -56,6 +58,6 @@ object Deck {
         if (card.suit == trumpCard.suit) card.copy(isTrump = true) else card
       )
 
-    Deck(shuffledCardsWithTrumps, trumpCard)
+    Deck(shuffledCardsWithTrumps)
   }
 }

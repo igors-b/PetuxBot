@@ -3,11 +3,12 @@ package com.petuxbot.domain
 import cats.effect.Sync
 
 final case class GameState (
-  deck: Deck = Deck.make,
+  deck: Deck = Deck.Empty,
   board: Board = Board.Empty,
   discardPile: DiscardPile = DiscardPile.Empty,
-  players: List[Player],
-  whoseTurn: Option[Player] = None
+  players: List[Player] = List.empty,
+  whoseTurn: Option[Player] = None,
+  trumpCard: Option[Card] = None
 )
 
 object GameState {

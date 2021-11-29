@@ -5,12 +5,11 @@ import com.petuxbot.Command.{StartGame, WrongCommand}
 
 object Parser {
 
-  def parse[F[_]: Sync](cmd: String): F[Command] = {
-    Sync[F].delay(
+  def parse(cmd: String): Command = {
     cmd match {
       case "start" => StartGame
       case _       => WrongCommand
     }
-    )
+
   }
 }
