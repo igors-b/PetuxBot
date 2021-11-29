@@ -25,13 +25,13 @@ object GameService {
       def process(cmd: Command): F[Response] =
         cmd match {
 
-          case AddPlayer(player) =>
+          case AddPlayers(playersToAdd) =>
             state.modify(state => {
-              val newState = state.copy(players = state.players :+ player)
+              val newState = state.copy(players = state.players ++ playersToAdd)
               (newState, OK)
             })
 
-          case DealCard => ???
+//          case DealCard => ???
           case StartGame =>
             state.modify(oldState => {
               val players = oldState.players
@@ -47,7 +47,7 @@ object GameService {
               } yield petuxbot.GameState(deck = deck, players = playersWithDealtHands, trumpCard = trumpCard, whoseTurn = whoseTurn)
 
               val newState = result.getOrElse(oldState)
-              (newState, ShowCardsToPlayer(newState.players.head.hand.cards, newState.deck.cards.last))
+              (newState, ShowCardsToPlayer(newState.players.head.hand.cards, newState.trumpCard))
             })
 
           case WrongCommand => state.modify(state => (state, Error("Error")))

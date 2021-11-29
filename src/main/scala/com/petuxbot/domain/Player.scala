@@ -8,4 +8,5 @@ case class Player(name: String, hand: Hand, score: Score, tricks: List[Trick]) {
 
   //UserID ???
   // dealer ???
+
 }

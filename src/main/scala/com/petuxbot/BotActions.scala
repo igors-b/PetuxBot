@@ -21,18 +21,18 @@ object BotActions {
       _             <-  Scenario.eval(chat.send(s"Hello, $userFirstName! Would you like to start PETUX game?"))
       player        =   Player(userFirstName, Hand.Empty, Score(15), List.empty[Trick])
       dealer        =   Player("Bot", Hand.Empty, Score(15), List.empty[Trick])
-      _             <-  Scenario.eval(gameService.process(AddPlayer(player)))
-      _             <-  Scenario.eval(gameService.process(AddPlayer(dealer)))
+      _             <-  Scenario.eval(gameService.process(AddPlayers(List(player, dealer))))
       _             <-  start(chat, gameService)
     } yield ()
 
   def start[F[_] : TelegramClient](chat: Chat, gameService: GameService[F]): Scenario[F, Unit] =
     for {
-      _          <- Scenario.eval(chat.send("Start game by typing START"))
+      _          <- Scenario.eval(chat.send("Start game by typing StartCommand"))
       resp       <- Scenario.expect(text)
       cmd        = Parser.parse(resp)
       response   <- Scenario.eval(gameService.process(cmd))
       _          <- response match {
+
         case ShowCardsToPlayer(cards, trumpCard) => {
           Scenario.eval(chat.send(s"Game started, your cards:")) >>
           Scenario.eval(chat.send(cards.asJson.spaces2)) >>

@@ -1,18 +1,21 @@
 package com.petuxbot
 
+import com.petuxbot.Command.{AddPlayers, DealCard, StartGame, WrongCommand}
 import com.petuxbot.domain.Rank.Ranks
 import com.petuxbot.domain.Suit.Suits
 import com.petuxbot.domain._
 import io.circe.generic.semiauto.deriveCodec
+import io.circe.generic.auto._
 import io.circe.{Codec, Decoder, Encoder}
+import io.circe.syntax._
+import cats.syntax.functor._
 
 
-trait Command
+sealed trait Command
 object Command {
   case object StartGame extends Command
-  case class AddPlayer(player: Player) extends Command
+  case class AddPlayers(players: List[Player]) extends Command
   case object DealCard extends Command
-  case object ResetState extends Command
   case object WrongCommand extends Command
 }
 
@@ -43,5 +46,18 @@ object ImplicitCodecs {
 
   implicit val responseCodec: Codec[Response] = deriveCodec[Response]
 
+  implicit val commandEncoder: Encoder[Command] = Encoder.instance {
+    case StartGame           => Encoder.encodeString("StartGame")
+    case DealCard            => Encoder.encodeString("DealCard")
+    case WrongCommand        => Encoder.encodeString("WrongCommand")
+    case ap @ AddPlayers(_)  => ap.asJson
+  }
 
+  implicit val commandDecoder: Decoder[Command] =
+    List[Decoder[Command]](
+      Decoder.decodeString.emap(str => if (str == "StartGame") Right(StartGame) else Left("wrong command")).widen,
+      Decoder.decodeString.emap(str => if (str == "DealCard") Right(DealCard) else Left("wrong command")).widen,
+      Decoder.decodeString.emap(str => if (str == "WrongCommand") Right(DealCard) else Left("wrong command")).widen,
+      Decoder[AddPlayers].widen
+    ).reduce(_ or _)
 }
