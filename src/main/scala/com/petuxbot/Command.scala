@@ -9,6 +9,7 @@ import io.circe.generic.auto._
 import io.circe.{Codec, Decoder, Encoder}
 import io.circe.syntax._
 import cats.syntax.functor._
+import com.petuxbot.domain.cardContainers.{Board, Deck, Hand}
 
 
 sealed trait Command

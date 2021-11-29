@@ -7,7 +7,7 @@ import com.petuxbot
 import com.petuxbot.Command._
 import com.petuxbot.{Command, GameState, Response}
 import com.petuxbot.Response._
-import com.petuxbot.domain.{Deck, Hand}
+import com.petuxbot.domain.cardContainers.{Deck, Hand}
 
 trait GameService[F[_]]{
   def process(cmd: Command): F[Response]
