@@ -5,7 +5,7 @@ import cats.effect.{ExitCode, IO, IOApp}
 import fs2.Stream
 import com.petuxbot.BotToken.token
 import com.petuxbot.BotActions.greetings
-import com.petuxbot.domain.GameService
+import com.petuxbot.services.GameService
 
 
 object Main extends IOApp {

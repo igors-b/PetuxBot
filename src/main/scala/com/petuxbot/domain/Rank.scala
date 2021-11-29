@@ -1,17 +1,13 @@
 package com.petuxbot.domain
 
 import cats.data.NonEmptyList
-import enumeratum._
-
-sealed trait Rank extends EnumEntry
-
-object Rank extends Enum[Rank] {
-
-  def values: IndexedSeq[Rank] = findValues
-
-  //lazy val Ranks = NonEmptyList(Ace, List(King, Queen, Jack, Ten))
 
 
+sealed trait Rank
+
+object Rank {
+
+  lazy val Ranks = NonEmptyList(Ace, List(King, Queen, Jack, Ten))
 
   case object Ace extends Rank {
     override def toString: String = "A"
@@ -28,9 +24,7 @@ object Rank extends Enum[Rank] {
   case object Ten extends Rank {
     override def toString: String = "T"
   }
-  def main(args: Array[String]): Unit = {
-    println(findValues)
-  }
+
 //  case object Nine extends Rank {
 //    override def toString: String = "9"
 //  }

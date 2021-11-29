@@ -7,7 +7,8 @@ import canoe.syntax.{command, text}
 import com.petuxbot.Command._
 import com.petuxbot.Response.{Error, OK, ShowCardsToPlayer}
 import com.petuxbot.ImplicitCodecs._
-import com.petuxbot.domain.{GameService, GameState, Hand, Player, Score, Trick}
+import com.petuxbot.domain.{Hand, Player, Score, Trick}
+import com.petuxbot.services.GameService
 import io.circe.syntax._
 
 
@@ -20,7 +21,6 @@ object BotActions {
       _             <-  Scenario.eval(chat.send(s"Hello, $userFirstName! Would you like to start PETUX game?"))
       player        =   Player(userFirstName, Hand.Empty, Score(15), List.empty[Trick])
       dealer        =   Player("Bot", Hand.Empty, Score(15), List.empty[Trick])
-      _             <-  Scenario.eval(gameService.process(ResetState))
       _             <-  Scenario.eval(gameService.process(AddPlayer(player)))
       _             <-  Scenario.eval(gameService.process(AddPlayer(dealer)))
       _             <-  start(chat, gameService)

@@ -1,15 +1,12 @@
 package com.petuxbot.domain
 
 import cats.data.NonEmptyList
-import enumeratum._
 
-sealed trait Suit extends EnumEntry
+sealed trait Suit
 
-object Suit extends Enum[Suit]{
+object Suit {
 
-  override def values: IndexedSeq[Suit] = findValues
-
-  //lazy val Suits = NonEmptyList(Clubs, List(Diamonds, Hearts, Spades))
+  lazy val Suits = NonEmptyList(Clubs, List(Diamonds, Hearts, Spades))
 
   case object Clubs extends Suit {
     override def toString: String = "c"

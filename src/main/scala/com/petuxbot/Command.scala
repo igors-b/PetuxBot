@@ -1,5 +1,7 @@
 package com.petuxbot
 
+import com.petuxbot.domain.Rank.Ranks
+import com.petuxbot.domain.Suit.Suits
 import com.petuxbot.domain._
 import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, Decoder, Encoder}
@@ -18,14 +20,14 @@ object ImplicitCodecs {
 
   implicit val suitDecoder: Decoder[Suit] =
     Decoder.decodeString.emap(str =>
-    Suit.values.find(_.toString == str).toRight("invalid suit")
+    Suits.find(_.toString == str).toRight("invalid suit")
   )
 
   implicit val suitEncoder: Encoder[Suit] =
     Encoder.encodeString.contramap(_.toString)
 
   implicit val rankDecoder: Decoder[Rank] = Decoder.decodeString.emap(string =>
-    Rank.values.find(_.toString == string).toRight("invalid rank")
+    Ranks.find(_.toString == string).toRight("invalid rank")
   )
 
   implicit val rankEncoder: Encoder[Rank] =

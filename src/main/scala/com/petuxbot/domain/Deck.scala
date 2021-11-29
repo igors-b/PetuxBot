@@ -1,10 +1,10 @@
 package com.petuxbot.domain
-import cats.data.NonEmptyList
 
+import cats.data.NonEmptyList
 import scala.util.Random
 import cats.implicits._
-import com.petuxbot.domain.Rank.{Ace, Jack, King, Queen, Ten}
-import com.petuxbot.domain.Suit.{Clubs, Diamonds, Hearts, Spades}
+import com.petuxbot.domain.Rank.Ranks
+import com.petuxbot.domain.Suit.Suits
 
 final case class Deck(cards: List[Card]) extends CardContainer {
   override def addCard(card: Card): Deck = this.copy(cards :+ card)
@@ -32,25 +32,17 @@ object Deck {
   lazy val Empty = Deck(List.empty)
 
   def make: Deck = {
-    val allCards = Rank.values
+
+    val allCards: NonEmptyList[Card] = Ranks
       .flatMap(rank =>
-        Suit.values.map(suit =>
+        Suits.map(suit =>
           Card(rank, suit)
         )
-      ).toList
+      )
 
-//    val ranks = NonEmptyList(Ace, List(King, Queen, Jack, Ten))
-//    val suits = NonEmptyList(Clubs, List(Diamonds, Hearts, Spades))
-//
-//    val allCards: NonEmptyList[Card] = ranks
-//      .flatMap(rank =>
-//        suits.map(suit =>
-//          Card(rank, suit)
-//        )
-//      )
-
-    val shuffledCards = Random.shuffle(allCards)
-    val trumpCard = shuffledCards.last.copy(isTrump = true)
+    val shuffledCards = Random.shuffle(allCards.toList)
+    val shuffleCardsNel = NonEmptyList.fromListUnsafe(shuffledCards)
+    val trumpCard = shuffleCardsNel.last.copy(isTrump = true)
 
 
     val shuffledCardsWithTrumps =

@@ -1,13 +1,13 @@
-package com.petuxbot.domain
+package com.petuxbot.services
 
-import cats.Monad
 import cats.effect.Sync
 import cats.effect.concurrent.Ref
 import cats.implicits.toFunctorOps
-import com.petuxbot.Command
+import com.petuxbot
 import com.petuxbot.Command._
-import com.petuxbot.Response
+import com.petuxbot.{Command, GameState, Response}
 import com.petuxbot.Response._
+import com.petuxbot.domain.{Deck, Hand}
 
 trait GameService[F[_]]{
   def process(cmd: Command): F[Response]
@@ -44,15 +44,10 @@ object GameService {
                 playersWithDealtHands = players zip dealtHands map {
                   case (player, newHand) => player.addCardsToHand(newHand.cards)
                 }
-              } yield GameState(deck = deck, players = playersWithDealtHands, trumpCard = trumpCard, whoseTurn = whoseTurn)
+              } yield petuxbot.GameState(deck = deck, players = playersWithDealtHands, trumpCard = trumpCard, whoseTurn = whoseTurn)
 
               val newState = result.getOrElse(oldState)
-              (newState, ShowCardsToPlayer(newState.players.head.hand.cards, newState.deck.cards.last)) //TODO error handling required
-            })
-
-          case ResetState =>
-            state.modify(_ => {
-              (GameState(), OK)
+              (newState, ShowCardsToPlayer(newState.players.head.hand.cards, newState.deck.cards.last))
             })
 
           case WrongCommand => state.modify(state => (state, Error("Error")))
