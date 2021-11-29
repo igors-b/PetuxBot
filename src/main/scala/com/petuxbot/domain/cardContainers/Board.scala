@@ -10,7 +10,7 @@ final case class Board(cards: List[Card], cardToHit: Option[Card], strongestCard
 
   def removeCard(card: Card): Board = this.copy(cards.filterNot(_ == card))
 
-  def removeCards(card: Card): Board = this.copy(cards.filterNot(_ == card))
+  def removeCards(cardsToRemove: List[Card]): Board = this.copy(cards.diff(cardsToRemove))
 
 }
 

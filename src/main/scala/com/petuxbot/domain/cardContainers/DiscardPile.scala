@@ -10,7 +10,7 @@ final case class DiscardPile (cards: List[Card]) extends CardContainer {
 
   def removeCard(card: Card): DiscardPile = this.copy(cards.filterNot(_ == card))
 
-  def removeCards(card: Card): DiscardPile = this.copy(cards.filterNot(_ == card))
+  def removeCards(cardsToRemove: List[Card]): DiscardPile = this.copy(cards.diff(cardsToRemove))
 }
 
 object DiscardPile {

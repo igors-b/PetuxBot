@@ -10,7 +10,7 @@ final case class Hand(cards: List[Card]) extends CardContainer {
 
   def removeCard(card: Card): Hand = this.copy(cards.filterNot(_ == card))
 
-  def removeCards(card: Card): Hand = this.copy(cards.filterNot(_ == card))
+  def removeCards(cardsToRemove: List[Card]): Hand = this.copy(cards.diff(cardsToRemove))
 }
 
 object  Hand {

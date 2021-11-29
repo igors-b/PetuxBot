@@ -9,5 +9,5 @@ final case class Trick(cards: List[Card]) extends CardContainer {
 
   def removeCard(card: Card): Trick = this.copy(cards.filterNot(_ == card))
 
-  def removeCards(card: Card): Trick = this.copy(cards.filterNot(_ == card))
+  def removeCards(cardsToRemove: List[Card]): Trick = this.copy(cards.diff(cardsToRemove))
 }

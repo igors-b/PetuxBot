@@ -16,7 +16,7 @@ final case class Deck(cards: List[Card]) extends CardContainer {
 
   def removeCard(card: Card): Deck = this.copy(cards.filterNot(_ == card))
 
-  def removeCards(card: Card): Deck = this.copy(cards.filterNot(_ == card))
+  def removeCards(cardsToRemove: List[Card]): Deck = this.copy(cards.diff(cardsToRemove))
 
   def deal(hands: List[Hand]): Option[(Deck, List[Hand])] = {
     if (hands.nonEmpty) {

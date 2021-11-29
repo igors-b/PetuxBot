@@ -5,7 +5,7 @@ import canoe.syntax._
 import canoe.models.Chat
 import canoe.syntax.{command, text}
 import com.petuxbot.Command._
-import com.petuxbot.Response.{Error, OK, ShowCardsToPlayer}
+import com.petuxbot.Response._
 import com.petuxbot.ImplicitCodecs._
 import com.petuxbot.domain.cardContainers.{Hand, Trick}
 import com.petuxbot.domain.{Player, Score}
