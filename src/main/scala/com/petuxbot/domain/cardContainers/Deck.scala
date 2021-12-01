@@ -1,6 +1,6 @@
 package com.petuxbot.domain.cardContainers
 
-import cats.{FlatMap, Monad}
+import cats.FlatMap
 import cats.data.NonEmptyList
 import cats.implicits._
 import com.petuxbot.domain.Rank.Ranks
@@ -10,11 +10,7 @@ import com.petuxbot.services.Shuffle
 
 final case class Deck(cards: List[Card]) extends CardContainer {
 
-  def addCard(card: Card): Deck = this.copy(cards :+ card)
-
   def addCards(cardsToAdd: List[Card]): Deck = this.copy(cards ++ cardsToAdd)
-
-  def removeCard(card: Card): Deck = this.copy(cards.filterNot(_ == card))
 
   def removeCards(cardsToRemove: List[Card]): Deck = this.copy(cards.diff(cardsToRemove))
 
@@ -34,7 +30,7 @@ final case class Deck(cards: List[Card]) extends CardContainer {
 }
 
 object Deck {
-  lazy val Empty = Deck(List.empty)
+  lazy val Empty: Deck = Deck(List.empty)
 
   def of[F[_] : FlatMap](shuffle: Shuffle[F]): F[Deck] = {
 
