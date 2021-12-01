@@ -8,8 +8,6 @@ import com.petuxbot.domain.Suit.Suits
 import com.petuxbot.domain.Card
 import com.petuxbot.services.Shuffle
 
-import scala.util.Random
-
 final case class Deck(cards: List[Card]) extends CardContainer {
 
   def addCard(card: Card): Deck = this.copy(cards :+ card)
@@ -50,20 +48,5 @@ object Deck {
       shuffledCardsWithTrumps = shuffledCards
                                  .map(card => if (card.suit == trumpCard.suit) card.copy(isTrump = true) else card)
     } yield Deck(shuffledCardsWithTrumps)
-  }
-
-  def make: Deck = {
-
-    val allCards: NonEmptyList[Card] = Ranks
-      .flatMap(rank => Suits.map(suit => Card(rank, suit)))
-
-    val shuffledCards   = Random.shuffle(allCards.toList)
-    val shuffleCardsNel = NonEmptyList.fromListUnsafe(shuffledCards)
-    val trumpCard       = shuffleCardsNel.last.copy(isTrump = true)
-
-    val shuffledCardsWithTrumps =
-      shuffledCards.map(card => if (card.suit == trumpCard.suit) card.copy(isTrump = true) else card)
-
-    Deck(shuffledCardsWithTrumps)
   }
 }
