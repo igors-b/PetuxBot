@@ -7,7 +7,7 @@ import com.petuxbot
 import com.petuxbot.Command._
 import com.petuxbot.{Command, GameState, Response}
 import com.petuxbot.Response._
-import com.petuxbot.domain.cardContainers.{Deck, Hand}
+import com.petuxbot.domain.cardContainers.Hand
 
 trait GameService[F[_]]{
   def process(cmd: Command): F[Response]
@@ -32,11 +32,11 @@ object GameService {
             })
 
 //          case DealCard => ???
-          case StartGame =>
+
+          case StartGame(deck) =>
             state.modify(oldState => {
               val players = oldState.players
               val hands = players.map(_ => Hand.Empty)
-              val deck = Deck.make
               val trumpCard = deck.cards.lastOption
               val result: Option[GameState] = for {
                 (deck, dealtHands) <- deck.deal(hands)
@@ -50,7 +50,7 @@ object GameService {
               (newState, ShowCardsToPlayer(newState.players.head.hand.cards, newState.trumpCard))
             })
 
-          case WrongCommand => state.modify(state => (state, Error("Error")))
+          case WrongCommand => state.modify(state => (state, Error("Wrong command entered")))
           case _ => ???
         }
 

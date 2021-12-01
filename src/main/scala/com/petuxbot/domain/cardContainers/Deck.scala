@@ -1,6 +1,6 @@
 package com.petuxbot.domain.cardContainers
 
-import cats.Monad
+import cats.{FlatMap, Monad}
 import cats.data.NonEmptyList
 import cats.implicits._
 import com.petuxbot.domain.Rank.Ranks
@@ -38,7 +38,7 @@ final case class Deck(cards: List[Card]) extends CardContainer {
 object Deck {
   lazy val Empty = Deck(List.empty)
 
-  def of[F[_] : Monad](shuffle: Shuffle[F]): F[Deck] = {
+  def of[F[_] : FlatMap](shuffle: Shuffle[F]): F[Deck] = {
 
     val allCards: NonEmptyList[Card] = Ranks
       .flatMap(rank => Suits.map(suit => Card(rank, suit)))

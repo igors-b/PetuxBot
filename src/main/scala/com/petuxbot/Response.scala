@@ -1,6 +1,5 @@
 package com.petuxbot
 import com.petuxbot.domain.Card
-import io.circe.generic.JsonCodec
 sealed trait Response
 
 object Response {

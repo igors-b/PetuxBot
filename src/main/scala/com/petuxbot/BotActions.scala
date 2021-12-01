@@ -7,13 +7,13 @@ import canoe.syntax.{command, text}
 import com.petuxbot.Command._
 import com.petuxbot.Response._
 import com.petuxbot.ImplicitCodecs._
-import com.petuxbot.domain.cardContainers.{Hand, Trick}
+import com.petuxbot.domain.cardContainers._
 import com.petuxbot.domain.{Player, Score}
-import com.petuxbot.services.GameService
+import com.petuxbot.services.{CreateDeck, GameService}
 import io.circe.syntax._
 
 object BotActions {
-  def greetings[F[_]: TelegramClient](gameService: GameService[F]): Scenario[F, Unit] =
+  def greetings[F[_]: TelegramClient](gameService: GameService[F], createDeck: CreateDeck[F]): Scenario[F, Unit] =
     for {
       chat          <- Scenario.expect(command("hello").chat)
       detailedChat  <- Scenario.eval(chat.details)
@@ -22,15 +22,19 @@ object BotActions {
       player        = Player(userFirstName, Hand.Empty, Score(15), List.empty[Trick])
       dealer        = Player("Bot", Hand.Empty, Score(15), List.empty[Trick])
       _             <- Scenario.eval(gameService.process(AddPlayers(List(player, dealer))))
-      _             <- start(chat, gameService)
+      _             <- start(chat, gameService, createDeck)
     } yield ()
 
-  def start[F[_]: TelegramClient](chat: Chat, gameService: GameService[F]): Scenario[F, Unit] =
+  def start[F[_]: TelegramClient](chat: Chat, gameService: GameService[F], createDeck: CreateDeck[F]): Scenario[F, Unit] =
     for {
       _        <- Scenario.eval(chat.send("Start game by typing StartCommand"))
       resp     <- Scenario.expect(text)
-      cmd      = Parser.parse(resp)
-      response <- Scenario.eval(gameService.process(cmd))
+      cmd      =  Parser.parse(resp)
+      deck     <- Scenario.eval(createDeck.apply())
+      response <- cmd match {
+                    case StartGame => Scenario.eval(gameService.process(StartGame(deck)))
+                    case _         => Scenario.eval(gameService.process(WrongCommand))
+                  }
       _ <- response match {
 
         case ShowCardsToPlayer(cards, trumpCard) => {
@@ -40,10 +44,10 @@ object BotActions {
             Scenario.eval(chat.send(trumpCard.asJson.spaces2)) >>
             startGame(chat, gameService)
         }
-
         case Error(_) =>
           Scenario.eval(chat.send(response.asJson.spaces2)) >>
-            start(chat, gameService)
+            start(chat, gameService, createDeck)
+        case _        => Scenario.eval(chat.send("Error appeared".asJson.spaces2))
       }
     } yield ()
 
