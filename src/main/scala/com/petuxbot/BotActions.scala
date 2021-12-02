@@ -78,7 +78,7 @@ object BotActions {
             Scenario.eval(chat.send(cards.asJson.spaces2)) >>
             Scenario.eval(chat.send("Trump card is:")) >>
             Scenario.eval(chat.send(trumpCard.asJson.spaces2)) >>
-            changeCards(chat, gameService)
+            defineWhoseTurn(chat, gameService)
 
         case Error(_) =>
           Scenario.eval(chat.send(response.asJson.spaces2)) >>
@@ -87,4 +87,33 @@ object BotActions {
       }
     } yield ()
   }
+
+  def defineWhoseTurn[F[_]: TelegramClient](chat: Chat, gameService: GameService[F]): Scenario[F, Unit] = {
+    for {
+      _ <- Scenario.eval(chat.send(s"Requesting playerID whose turn"))
+      detailedChat <- Scenario.eval(chat.details)
+      id     =  detailedChat.id
+      response <- Scenario.eval(gameService.process(GetPlayerIdWhoseTurn))
+      _ <- response match {
+        case WhoseTurn(playerId) =>
+          if (playerId == id) playerMakesTurn(chat, gameService)
+          else botMakesTurn(chat, gameService)
+        case Error(_) => ???
+        case _ => Scenario.eval(chat.send("Error appeared"))
+      }
+    } yield ()
+  }
+
+  def playerMakesTurn[F[_]: TelegramClient](chat: Chat, gameService: GameService[F]): Scenario[F, Unit] = {
+    for {
+      _ <- Scenario.eval(chat.send("Now it is your turn. Put card on the Board"))
+    } yield ()
+
+  }
+
+  def botMakesTurn[F[_]: TelegramClient](chat: Chat, gameService: GameService[F]): Scenario[F, Unit] = {
+    ???
+  }
+
+
 }

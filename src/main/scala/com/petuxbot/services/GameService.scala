@@ -3,7 +3,6 @@ package com.petuxbot.services
 import cats.effect.Sync
 import cats.effect.concurrent.Ref
 import cats.implicits.toFunctorOps
-import com.petuxbot
 import com.petuxbot.Request._
 import com.petuxbot.{GameState, Request, Response}
 import com.petuxbot.Response._
@@ -45,12 +44,12 @@ object GameService {
                   case (player, newHand) => player.copy(hand = newHand)
                 }
               } yield GameState(
-                  deck = newDeck,
-                  board = oldState.board,
+                  deck        = newDeck,
+                  board       = oldState.board,
                   discardPile = oldState.discardPile.addCards(cards),
-                  whoseTurn = oldState.whoseTurn,
-                  trumpCard = oldState.trumpCard,
-                  players = playerWithDealtHand ++ otherPlayers
+                  whoseTurn   = oldState.whoseTurn,
+                  trumpCard   = oldState.trumpCard,
+                  players     = playerWithDealtHand ++ otherPlayers
               )
 
               val newState = result.getOrElse(oldState)
@@ -58,6 +57,14 @@ object GameService {
               newState.players.find(_.id == playerId) match {
                 case Some(player) => (newState, ShowCardsToPlayer(player.hand.cards, newState.trumpCard))
                 case None         => (newState, Error("Player with such Id not found"))
+              }
+            })
+
+          case GetPlayerIdWhoseTurn =>
+            state.modify(state => {
+              state.whoseTurn match {
+                case Some(player) => (state, WhoseTurn(player.id))
+                case None         => ???
               }
             })
 
