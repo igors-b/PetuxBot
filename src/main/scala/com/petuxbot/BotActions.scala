@@ -17,37 +17,44 @@ object BotActions {
     for {
       chat          <- Scenario.expect(command("hello").chat)
       detailedChat  <- Scenario.eval(chat.details)
+      id            = detailedChat.id
       userFirstName = detailedChat.firstName.getOrElse("dear Friend")
       _             <- Scenario.eval(chat.send(s"Hello, $userFirstName! Would you like to start PETUX game?"))
-      player        = Player(userFirstName, Hand.Empty, Score(15), List.empty[Trick])
-      dealer        = Player("Bot", Hand.Empty, Score(15), List.empty[Trick])
+      player        = Player(id, userFirstName, Hand.Empty, Score(15), List.empty[Trick])
+      dealer        = Player(0, "Bot", Hand.Empty, Score(15), List.empty[Trick])
       _             <- Scenario.eval(gameService.process(AddPlayers(List(player, dealer))))
       _             <- start(chat, gameService, createDeck)
     } yield ()
 
-  def start[F[_]: TelegramClient](chat: Chat, gameService: GameService[F], createDeck: CreateDeck[F]): Scenario[F, Unit] =
+  def start[F[_]: TelegramClient](
+    chat: Chat,
+    gameService: GameService[F],
+    createDeck: CreateDeck[F]
+  ): Scenario[F, Unit] =
     for {
-      _        <- Scenario.eval(chat.send("Start game by typing StartCommand"))
-      resp     <- Scenario.expect(text)
-      cmd      =  Parser.parse(resp)
-      deck     <- Scenario.eval(createDeck.apply())
+      _            <- Scenario.eval(chat.send("Start game by typing StartCommand"))
+      detailedChat <- Scenario.eval(chat.details)
+      id           =  detailedChat.id
+      resp         <- Scenario.expect(text)
+      cmd          = Parser.parse(resp)
+      deck         <- Scenario.eval(createDeck.apply())
       response <- cmd match {
-                    case StartGame => Scenario.eval(gameService.process(StartGame(deck)))
-                    case _         => Scenario.eval(gameService.process(WrongCommand))
-                  }
+        case StartGame => Scenario.eval(gameService.process(StartGame(id, deck)))
+        case _         => Scenario.eval(gameService.process(WrongCommand))
+      }
       _ <- response match {
 
-        case ShowCardsToPlayer(cards, trumpCard) => {
+        case ShowCardsToPlayer(cards, trumpCard) =>
           Scenario.eval(chat.send(s"Game started, your cards:")) >>
             Scenario.eval(chat.send(cards.asJson.spaces2)) >>
             Scenario.eval(chat.send("Trump card is:")) >>
             Scenario.eval(chat.send(trumpCard.asJson.spaces2)) >>
             startGame(chat, gameService)
-        }
+
         case Error(_) =>
           Scenario.eval(chat.send(response.asJson.spaces2)) >>
             start(chat, gameService, createDeck)
-        case _        => Scenario.eval(chat.send("Error appeared".asJson.spaces2))
+        case _ => Scenario.eval(chat.send("Error appeared".asJson.spaces2))
       }
     } yield ()
 

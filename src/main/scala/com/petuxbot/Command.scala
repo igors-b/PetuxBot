@@ -15,7 +15,7 @@ import com.petuxbot.domain.cardContainers.{Board, Deck, Hand}
 sealed trait Command
 object Command {
   case object StartGame extends Command
-  case class StartGame(deck: Deck) extends Command
+  case class StartGame(playerId: Long, deck: Deck) extends Command
   final case class AddPlayers(players: List[Player]) extends Command
   case object DealCard extends Command
   case object WrongCommand extends Command

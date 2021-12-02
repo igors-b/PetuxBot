@@ -20,7 +20,7 @@ object GameService {
 
   def apply[F[_]](
     state: Ref[F, GameState]
-  ) =
+  ): GameService[F] =
     new GameService[F] {
       def process(cmd: Command): F[Response] =
         cmd match {
@@ -33,7 +33,7 @@ object GameService {
 
 //          case DealCard => ???
 
-          case StartGame(deck) =>
+          case StartGame(playerId, deck) =>
             state.modify(oldState => {
               val players = oldState.players
               val hands = players.map(_ => Hand.Empty)
@@ -47,7 +47,11 @@ object GameService {
               } yield petuxbot.GameState(deck = deck, players = playersWithDealtHands, trumpCard = trumpCard, whoseTurn = whoseTurn)
 
               val newState = result.getOrElse(oldState)
-              (newState, ShowCardsToPlayer(newState.players.head.hand.cards, newState.trumpCard))
+
+              newState.players.find(_.id == playerId) match {
+                case Some(player) => (newState, ShowCardsToPlayer(player.hand.cards, newState.trumpCard))
+                case None         => (newState, Error("Player with such Id not found"))
+              }
             })
 
           case WrongCommand => state.modify(state => (state, Error("Wrong command entered")))
