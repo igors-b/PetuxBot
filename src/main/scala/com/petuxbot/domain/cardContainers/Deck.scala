@@ -10,7 +10,11 @@ import com.petuxbot.services.Shuffle
 
 final case class Deck(cards: List[Card]) extends CardContainer {
 
+  def addCard(card: Card): Deck = addCards(List(card))
+
   def addCards(cardsToAdd: List[Card]): Deck = this.copy(cards ++ cardsToAdd)
+
+  def removeCard(card: Card): Deck = removeCards(List(card))
 
   def removeCards(cardsToRemove: List[Card]): Deck = this.copy(cards.diff(cardsToRemove))
 

@@ -46,7 +46,7 @@ object BotActions {
       }
       _ <- response match {
 
-        case ShowCardsToPlayer(cards, trumpCard) =>
+        case ShowBoardAndCardsToPlayer(board, cards, trumpCard) =>
           Scenario.eval(chat.send(s"Game started, your cards:")) >>
             Scenario.eval(chat.send(cards.asJson.spaces2)) >>
             Scenario.eval(chat.send("Trump card is:")) >>
@@ -60,20 +60,20 @@ object BotActions {
       }
     } yield ()
 
-  def changeCards[F[_]: TelegramClient](chat: Chat, gameService: GameService[F]): Scenario[F, Unit] = {
+  def changeCards[F[_]: TelegramClient](chat: Chat, gameService: GameService[F]): Scenario[F, Unit] =
     for {
-      _ <- Scenario.eval(chat.send(s"Would you like to change some cards?"))
-      detailedChat <- Scenario.eval(chat.details)
-      playerId     =  detailedChat.id
-      resp         <- Scenario.expect(text)
-      cmd          = Parser.parse(resp)
-      response <- cmd match {
+      _            <-  Scenario.eval(chat.send(s"Would you like to change some cards?"))
+      detailedChat <-  Scenario.eval(chat.details)
+      playerId     =   detailedChat.id
+      resp         <-  Scenario.expect(text)
+      command      =   Parser.parse(resp)
+      response     <-  command match {
         case ChangeCards(cards) => Scenario.eval(gameService.process(ChangeCardsForPlayer(playerId, cards)))
         case _                  => ??? //Scenario.eval(gameService.process(WrongCommand))
       }
-      _ <- response match {
+      _            <- response match {
 
-        case ShowCardsToPlayer(cards, trumpCard) =>
+        case ShowBoardAndCardsToPlayer(board, cards, trumpCard) =>
           Scenario.eval(chat.send(s"Your cards:")) >>
             Scenario.eval(chat.send(cards.asJson.spaces2)) >>
             Scenario.eval(chat.send("Trump card is:")) >>
@@ -86,9 +86,9 @@ object BotActions {
         case _ => Scenario.eval(chat.send("Error appeared"))
       }
     } yield ()
-  }
 
-  def defineWhoseTurn[F[_]: TelegramClient](chat: Chat, gameService: GameService[F]): Scenario[F, Unit] = {
+
+  def defineWhoseTurn[F[_]: TelegramClient](chat: Chat, gameService: GameService[F]): Scenario[F, Unit] =
     for {
       _ <- Scenario.eval(chat.send(s"Requesting playerID whose turn"))
       detailedChat <- Scenario.eval(chat.details)
@@ -102,18 +102,43 @@ object BotActions {
         case _ => Scenario.eval(chat.send("Error appeared"))
       }
     } yield ()
-  }
+
 
   def playerMakesTurn[F[_]: TelegramClient](chat: Chat, gameService: GameService[F]): Scenario[F, Unit] = {
     for {
-      _ <- Scenario.eval(chat.send("Now it is your turn. Put card on the Board"))
+      _ <- Scenario.eval(chat.send("Now it is Your turn. Put card on the Board"))
+      detailedChat <- Scenario.eval(chat.details)
+      playerId     =  detailedChat.id
+      resp         <-  Scenario.expect(text)
+      command      =   Parser.parse(resp)
+      response     <-  command match {
+        case MakeTurnWithCard(card) => Scenario.eval(chat.send("MakeTurnCommandParsed")) >> Scenario.eval(gameService.process(PlayerMakesTurn(playerId, card)))
+        case _                  => ??? //Scenario.eval(gameService.process(WrongCommand))
+      }
+      _            <- response match {
+
+        case ShowBoardAndCardsToPlayer(board, cards, trumpCard) =>
+          Scenario.eval(chat.send("Board is:")) >>
+            Scenario.eval(chat.send(board.asJson.spaces2)) >>
+            Scenario.eval(chat.send(s"Your cards:")) >>
+            Scenario.eval(chat.send(cards.asJson.spaces2)) >>
+            Scenario.eval(chat.send("Trump card is:")) >>
+            Scenario.eval(chat.send(trumpCard.asJson.spaces2)) >>
+            defineWhoseTurn(chat, gameService)
+
+        case Error(_) =>
+          Scenario.eval(chat.send(response.asJson.spaces2)) >>
+            playerMakesTurn(chat, gameService)
+        case _ => Scenario.eval(chat.send("Error appeared"))
+      }
     } yield ()
 
   }
 
-  def botMakesTurn[F[_]: TelegramClient](chat: Chat, gameService: GameService[F]): Scenario[F, Unit] = {
-    ???
-  }
+  def botMakesTurn[F[_]: TelegramClient](chat: Chat, gameService: GameService[F]): Scenario[F, Unit] =
+    for {
+      _ <- Scenario.eval(chat.send("Now it is Bot's turn."))
+    } yield ()
 
 
 }

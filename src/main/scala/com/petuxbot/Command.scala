@@ -16,6 +16,7 @@ sealed trait Command
 object Command {
   case object StartGame extends Command
   final case class ChangeCards(cards: List[Card]) extends Command
+  final case class MakeTurnWithCard(card: Card) extends Command
   case object WrongCommand extends Command
 }
 
@@ -50,12 +51,14 @@ object ImplicitCodecs {
     case StartGame                => Encoder.encodeString("StartGame")
     case WrongCommand             => Encoder.encodeString("WrongCommand")
     case cc @ ChangeCards(_)      => cc.asJson
+    case mt @ MakeTurnWithCard(_) => mt.asJson
   }
 
   implicit val commandDecoder: Decoder[Command] =
     List[Decoder[Command]](
       Decoder.decodeString.emap(str => if (str == "StartGame") Right(StartGame) else Left("wrong command")).widen,
       Decoder.decodeString.emap(str => if (str == "WrongCommand") Right(WrongCommand) else Left("wrong command")).widen,
-      Decoder[ChangeCards].widen
+      Decoder[ChangeCards].widen,
+      Decoder[MakeTurnWithCard].widen
     ).reduce(_ or _)
 }

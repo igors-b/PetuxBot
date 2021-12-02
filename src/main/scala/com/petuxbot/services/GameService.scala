@@ -6,7 +6,9 @@ import cats.implicits.toFunctorOps
 import com.petuxbot.Request._
 import com.petuxbot.{GameState, Request, Response}
 import com.petuxbot.Response._
-import com.petuxbot.domain.cardContainers.Hand
+import com.petuxbot.domain.cardContainers.{Deck, Hand}
+import com.petuxbot.CardValidator._
+
 
 trait GameService[F[_]]{
   def process(request: Request): F[Response]
@@ -55,7 +57,7 @@ object GameService {
               val newState = result.getOrElse(oldState)
 
               newState.players.find(_.id == playerId) match {
-                case Some(player) => (newState, ShowCardsToPlayer(player.hand.cards, newState.trumpCard))
+                case Some(player) => (newState, ShowBoardAndCardsToPlayer(newState.board, player.hand.cards, newState.trumpCard))
                 case None         => (newState, Error("Player with such Id not found"))
               }
             })
@@ -65,6 +67,35 @@ object GameService {
               state.whoseTurn match {
                 case Some(player) => (state, WhoseTurn(player.id))
                 case None         => ???
+              }
+            })
+
+          case PlayerMakesTurn(playerId, card) =>
+            state.modify(oldState => {
+              val players    = oldState.players
+              val scores     = players.map(_.score)
+              val board      = oldState.board
+              val playerOpt  = players.find(_.id == playerId)
+              val gameState = for {
+                player        <- playerOpt
+                if isCardValidToMakeTurn(card, player, scores)
+                others        =  players.diff(List(player))
+                updatedPlayer =  player.copy(hand = player.hand.removeCard(card))
+              } yield GameState(
+                deck = Deck.Empty,
+                board = board.addCard(card),
+                discardPile = oldState.discardPile.addCards(oldState.deck.cards),
+                trumpCard = oldState.trumpCard,
+                whoseTurn = players.find(_.id == 0),
+                players = updatedPlayer +: others
+              )
+
+              gameState match {
+                case Some(newState) => newState.players.find(_.id == playerId) match {
+                  case Some(player) => (newState, ShowBoardAndCardsToPlayer(newState.board, player.hand.cards, newState.trumpCard))
+                  case None         => (oldState, Error("There is no player with such Id"))
+                } //add response
+                case None           =>  (oldState, Error("Wrong Card")) //add error
               }
             })
 
@@ -84,7 +115,7 @@ object GameService {
               val newState = result.getOrElse(oldState)
 
               newState.players.find(_.id == playerId) match {
-                case Some(player) => (newState, ShowCardsToPlayer(player.hand.cards, newState.trumpCard))
+                case Some(player) => (newState, ShowBoardAndCardsToPlayer(newState.board, player.hand.cards, newState.trumpCard))
                 case None         => (newState, Error("Player with such Id not found"))
               }
             })
