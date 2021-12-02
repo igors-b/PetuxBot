@@ -4,9 +4,11 @@ import canoe.api._
 import canoe.syntax._
 import canoe.models.Chat
 import canoe.syntax.{command, text}
-import com.petuxbot.Command._
+import com.petuxbot.Command.{StartGame, _}
 import com.petuxbot.Response._
+import com.petuxbot.Request._
 import com.petuxbot.ImplicitCodecs._
+import com.petuxbot.Request.AddPlayers
 import com.petuxbot.domain.cardContainers._
 import com.petuxbot.domain.{Player, Score}
 import com.petuxbot.services.{CreateDeck, GameService}
@@ -34,13 +36,13 @@ object BotActions {
     for {
       _            <- Scenario.eval(chat.send("Start game by typing StartCommand"))
       detailedChat <- Scenario.eval(chat.details)
-      id           =  detailedChat.id
+      playerId     =  detailedChat.id
       resp         <- Scenario.expect(text)
       cmd          = Parser.parse(resp)
       deck         <- Scenario.eval(createDeck.apply())
       response <- cmd match {
-        case StartGame => Scenario.eval(gameService.process(StartGame(id, deck)))
-        case _         => Scenario.eval(gameService.process(WrongCommand))
+        case StartGame => Scenario.eval(gameService.process(StartRound(playerId, deck)))
+        case _         => ??? //Scenario.eval(gameService.process(WrongCommand))
       }
       _ <- response match {
 
@@ -49,19 +51,40 @@ object BotActions {
             Scenario.eval(chat.send(cards.asJson.spaces2)) >>
             Scenario.eval(chat.send("Trump card is:")) >>
             Scenario.eval(chat.send(trumpCard.asJson.spaces2)) >>
-            startGame(chat, gameService)
+            changeCards(chat, gameService)
 
         case Error(_) =>
           Scenario.eval(chat.send(response.asJson.spaces2)) >>
             start(chat, gameService, createDeck)
-        case _ => Scenario.eval(chat.send("Error appeared".asJson.spaces2))
+        case _ => Scenario.eval(chat.send("Error appeared"))
       }
     } yield ()
 
-  def startGame[F[_]: TelegramClient](chat: Chat, gameService: GameService[F]): Scenario[F, Unit] = {
+  def changeCards[F[_]: TelegramClient](chat: Chat, gameService: GameService[F]): Scenario[F, Unit] = {
     for {
-      _ <- Scenario.eval(chat.send(s"Next stage"))
+      _ <- Scenario.eval(chat.send(s"Would you like to change some cards?"))
+      detailedChat <- Scenario.eval(chat.details)
+      playerId     =  detailedChat.id
+      resp         <- Scenario.expect(text)
+      cmd          = Parser.parse(resp)
+      response <- cmd match {
+        case ChangeCards(cards) => Scenario.eval(gameService.process(ChangeCardsForPlayer(playerId, cards)))
+        case _                  => ??? //Scenario.eval(gameService.process(WrongCommand))
+      }
+      _ <- response match {
 
+        case ShowCardsToPlayer(cards, trumpCard) =>
+          Scenario.eval(chat.send(s"Your cards:")) >>
+            Scenario.eval(chat.send(cards.asJson.spaces2)) >>
+            Scenario.eval(chat.send("Trump card is:")) >>
+            Scenario.eval(chat.send(trumpCard.asJson.spaces2)) >>
+            changeCards(chat, gameService)
+
+        case Error(_) =>
+          Scenario.eval(chat.send(response.asJson.spaces2)) >>
+            changeCards(chat, gameService)
+        case _ => Scenario.eval(chat.send("Error appeared"))
+      }
     } yield ()
   }
 }

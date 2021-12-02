@@ -4,13 +4,13 @@ import cats.effect.Sync
 import cats.effect.concurrent.Ref
 import cats.implicits.toFunctorOps
 import com.petuxbot
-import com.petuxbot.Command._
-import com.petuxbot.{Command, GameState, Response}
+import com.petuxbot.Request._
+import com.petuxbot.{GameState, Request, Response}
 import com.petuxbot.Response._
 import com.petuxbot.domain.cardContainers.Hand
 
 trait GameService[F[_]]{
-  def process(cmd: Command): F[Response]
+  def process(request: Request): F[Response]
 }
 
 object GameService {
@@ -22,8 +22,8 @@ object GameService {
     state: Ref[F, GameState]
   ): GameService[F] =
     new GameService[F] {
-      def process(cmd: Command): F[Response] =
-        cmd match {
+      def process(request: Request): F[Response] =
+        request match {
 
           case AddPlayers(playersToAdd) =>
             state.modify(state => {
@@ -32,8 +32,37 @@ object GameService {
             })
 
 //          case DealCard => ???
+          case ChangeCardsForPlayer(playerId, cards) =>
+            state.modify(oldState => {
+              val players = oldState.players
+              val deck = oldState.deck
+              val playerOpt = players.find(_.id == playerId)
+              val result: Option[GameState] = for {
+                player                <- playerOpt
+                pwrc                  =  player.removeCardsFromHand(cards)
+                otherPlayers          =  players.diff(List(player))
+                (newDeck, dealtHands) <- deck.deal(List(pwrc.hand))
+                playerWithDealtHand   =  List(pwrc) zip dealtHands map {
+                  case (player, newHand) => player.copy(hand = newHand)
+                }
+              } yield petuxbot.GameState(
+                  deck = newDeck,
+                  board = oldState.board,
+                  discardPile = oldState.discardPile,
+                  whoseTurn = oldState.whoseTurn,
+                  trumpCard = oldState.trumpCard,
+                  players = playerWithDealtHand ++ otherPlayers
+              )
 
-          case StartGame(playerId, deck) =>
+              val newState = result.getOrElse(oldState)
+
+              newState.players.find(_.id == playerId) match {
+                case Some(player) => (newState, ShowCardsToPlayer(player.hand.cards, newState.trumpCard))
+                case None         => (newState, Error("Player with such Id not found"))
+              }
+            })
+
+          case StartRound(playerId, deck) =>
             state.modify(oldState => {
               val players = oldState.players
               val hands = players.map(_ => Hand.Empty)
@@ -54,7 +83,7 @@ object GameService {
               }
             })
 
-          case WrongCommand => state.modify(state => (state, Error("Wrong command entered")))
+          case WrongRequest => state.modify(state => (state, Error("Wrong command entered")))
           case _ => ???
         }
 
