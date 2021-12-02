@@ -37,17 +37,17 @@ object GameService {
               val deck = oldState.deck
               val playerOpt = players.find(_.id == playerId)
               val result: Option[GameState] = for {
-                player                <- playerOpt
-                pwrc                  =  player.removeCardsFromHand(cards)
-                otherPlayers          =  players.diff(List(player))
-                (newDeck, dealtHands) <- deck.deal(List(pwrc.hand))
-                playerWithDealtHand   =  List(pwrc) zip dealtHands map {
+                player                   <- playerOpt
+                playerAfterCardsRemoved  =  player.removeCardsFromHand(cards)
+                otherPlayers             =  players.diff(List(player))
+                (newDeck, dealtHands)    <- deck.deal(List(playerAfterCardsRemoved.hand))
+                playerWithDealtHand      =  List(playerAfterCardsRemoved) zip dealtHands map {
                   case (player, newHand) => player.copy(hand = newHand)
                 }
-              } yield petuxbot.GameState(
+              } yield GameState(
                   deck = newDeck,
                   board = oldState.board,
-                  discardPile = oldState.discardPile,
+                  discardPile = oldState.discardPile.addCards(cards),
                   whoseTurn = oldState.whoseTurn,
                   trumpCard = oldState.trumpCard,
                   players = playerWithDealtHand ++ otherPlayers
@@ -72,7 +72,7 @@ object GameService {
                 playersWithDealtHands = players zip dealtHands map {
                   case (player, newHand) => player.addCardsToHand(newHand.cards)
                 }
-              } yield petuxbot.GameState(deck = deck, players = playersWithDealtHands, trumpCard = trumpCard, whoseTurn = whoseTurn)
+              } yield GameState(deck = deck, players = playersWithDealtHands, trumpCard = trumpCard, whoseTurn = whoseTurn)
 
               val newState = result.getOrElse(oldState)
 
