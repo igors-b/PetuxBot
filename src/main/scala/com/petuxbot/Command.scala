@@ -15,10 +15,7 @@ import com.petuxbot.domain.cardContainers.{Board, Deck, Hand}
 sealed trait Command
 object Command {
   case object StartGame extends Command
- // final case class StartGame(playerId: Long, deck: Deck) extends Command
-//  final case class AddPlayers(players: List[Player]) extends Command
   final case class ChangeCards(cards: List[Card]) extends Command
-  case object DealCard extends Command
   case object WrongCommand extends Command
 }
 
@@ -51,7 +48,6 @@ object ImplicitCodecs {
 
   implicit val commandEncoder: Encoder[Command] = Encoder.instance {
     case StartGame                => Encoder.encodeString("StartGame")
-    case DealCard                 => Encoder.encodeString("DealCard")
     case WrongCommand             => Encoder.encodeString("WrongCommand")
     case cc @ ChangeCards(_)      => cc.asJson
   }
@@ -59,7 +55,6 @@ object ImplicitCodecs {
   implicit val commandDecoder: Decoder[Command] =
     List[Decoder[Command]](
       Decoder.decodeString.emap(str => if (str == "StartGame") Right(StartGame) else Left("wrong command")).widen,
-      Decoder.decodeString.emap(str => if (str == "DealCard") Right(DealCard) else Left("wrong command")).widen,
       Decoder.decodeString.emap(str => if (str == "WrongCommand") Right(WrongCommand) else Left("wrong command")).widen,
       Decoder[ChangeCards].widen
     ).reduce(_ or _)

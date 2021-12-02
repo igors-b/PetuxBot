@@ -31,7 +31,6 @@ object GameService {
               (newState, OK)
             })
 
-//          case DealCard => ???
           case ChangeCardsForPlayer(playerId, cards) =>
             state.modify(oldState => {
               val players = oldState.players
