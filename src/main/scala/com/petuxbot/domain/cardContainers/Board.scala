@@ -11,6 +11,10 @@ final case class Board(cards: List[Card], cardToHit: Option[Card], strongestCard
   def removeCard(card: Card): Board = removeCards(List(card))
 
   def removeCards(cardsToRemove: List[Card]): Board = this.copy(cards.diff(cardsToRemove))
+
+  def setCardToHit(card: Card): Board = this.copy(cardToHit = Some(card))
+
+  def setStrongestCard(card: Card): Board = this.copy(strongestCard = Some(card))
 }
 
 object Board {

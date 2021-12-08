@@ -57,7 +57,7 @@ object GameService {
               val newState = result.getOrElse(oldState)
 
               newState.players.find(_.id == playerId) match {
-                case Some(player) => (newState, ShowBoardAndCardsToPlayer(newState.board, player.hand.cards, newState.trumpCard))
+                case Some(player) => (newState, ShowBoardAndHandToPlayer(newState.board, player.hand, newState.trumpCard))
                 case None         => (newState, Error("Player with such Id not found"))
               }
             })
@@ -83,7 +83,7 @@ object GameService {
                 updatedPlayer =  player.copy(hand = player.hand.removeCard(card))
               } yield GameState(
                 deck = Deck.Empty,
-                board = board.addCard(card),
+                board = board.addCard(card).setCardToHit(card).setStrongestCard(card),
                 discardPile = oldState.discardPile.addCards(oldState.deck.cards),
                 trumpCard = oldState.trumpCard,
                 whoseTurn = players.find(_.id == 0),
@@ -92,9 +92,9 @@ object GameService {
 
               gameState match {
                 case Some(newState) => newState.players.find(_.id == playerId) match {
-                  case Some(player) => (newState, ShowBoardAndCardsToPlayer(newState.board, player.hand.cards, newState.trumpCard))
+                  case Some(player) => (newState, ShowBoardAndHandToPlayer(newState.board, player.hand, newState.trumpCard))
                   case None         => (oldState, Error("There is no player with such Id"))
-                } //add response
+                }
                 case None           =>  (oldState, Error("Wrong Card")) //add error
               }
             })
@@ -115,7 +115,7 @@ object GameService {
               val newState = result.getOrElse(oldState)
 
               newState.players.find(_.id == playerId) match {
-                case Some(player) => (newState, ShowBoardAndCardsToPlayer(newState.board, player.hand.cards, newState.trumpCard))
+                case Some(player) => (newState, ShowBoardAndHandToPlayer(newState.board, player.hand, newState.trumpCard))
                 case None         => (newState, Error("Player with such Id not found"))
               }
             })

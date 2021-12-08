@@ -34,7 +34,7 @@ object BotActions {
     createDeck: CreateDeck[F]
   ): Scenario[F, Unit] =
     for {
-      _            <- Scenario.eval(chat.send("Start game by typing StartCommand"))
+      _            <- Scenario.eval(chat.send("Start game by typing StartGame"))
       detailedChat <- Scenario.eval(chat.details)
       playerId     =  detailedChat.id
       resp         <- Scenario.expect(text)
@@ -46,9 +46,9 @@ object BotActions {
       }
       _ <- response match {
 
-        case ShowBoardAndCardsToPlayer(board, cards, trumpCard) =>
+        case ShowBoardAndHandToPlayer(board, hand, trumpCard) =>
           Scenario.eval(chat.send(s"Game started, your cards:")) >>
-            Scenario.eval(chat.send(cards.asJson.spaces2)) >>
+            Scenario.eval(chat.send(hand.asJson.spaces2)) >>
             Scenario.eval(chat.send("Trump card is:")) >>
             Scenario.eval(chat.send(trumpCard.asJson.spaces2)) >>
             changeCards(chat, gameService)
@@ -73,9 +73,9 @@ object BotActions {
       }
       _            <- response match {
 
-        case ShowBoardAndCardsToPlayer(board, cards, trumpCard) =>
+        case ShowBoardAndHandToPlayer(board, hand, trumpCard) =>
           Scenario.eval(chat.send(s"Your cards:")) >>
-            Scenario.eval(chat.send(cards.asJson.spaces2)) >>
+            Scenario.eval(chat.send(hand.asJson.spaces2)) >>
             Scenario.eval(chat.send("Trump card is:")) >>
             Scenario.eval(chat.send(trumpCard.asJson.spaces2)) >>
             defineWhoseTurn(chat, gameService)
@@ -117,11 +117,11 @@ object BotActions {
       }
       _            <- response match {
 
-        case ShowBoardAndCardsToPlayer(board, cards, trumpCard) =>
+        case ShowBoardAndHandToPlayer(board, hand, trumpCard) =>
           Scenario.eval(chat.send("Board is:")) >>
             Scenario.eval(chat.send(board.asJson.spaces2)) >>
             Scenario.eval(chat.send(s"Your cards:")) >>
-            Scenario.eval(chat.send(cards.asJson.spaces2)) >>
+            Scenario.eval(chat.send(hand.asJson.spaces2)) >>
             Scenario.eval(chat.send("Trump card is:")) >>
             Scenario.eval(chat.send(trumpCard.asJson.spaces2)) >>
             defineWhoseTurn(chat, gameService)
