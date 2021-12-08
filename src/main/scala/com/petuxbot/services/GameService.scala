@@ -57,7 +57,9 @@ object GameService {
               val newState = result.getOrElse(oldState)
 
               newState.players.find(_.id == playerId) match {
-                case Some(player) => (newState, ShowBoardAndHandToPlayer(newState.board, player.hand, newState.trumpCard))
+                case Some(player) =>
+                  val scores = newState.players.map(player => s"${player.name}: ${player.score.value}")
+                  (newState, ShowBoardAndHandToPlayer(newState.board, player.hand, newState.trumpCard, scores))
                 case None         => (newState, Error("Player with such Id not found"))
               }
             })
@@ -92,7 +94,9 @@ object GameService {
 
               gameState match {
                 case Some(newState) => newState.players.find(_.id == playerId) match {
-                  case Some(player) => (newState, ShowBoardAndHandToPlayer(newState.board, player.hand, newState.trumpCard))
+                  case Some(player) =>
+                    val scores = newState.players.map(player => s"${player.name}: ${player.score.value}")
+                    (newState, ShowBoardAndHandToPlayer(newState.board, player.hand, newState.trumpCard, scores))
                   case None         => (oldState, Error("There is no player with such Id"))
                 }
                 case None           =>  (oldState, Error("Wrong Card")) //add error
@@ -115,7 +119,9 @@ object GameService {
               val newState = result.getOrElse(oldState)
 
               newState.players.find(_.id == playerId) match {
-                case Some(player) => (newState, ShowBoardAndHandToPlayer(newState.board, player.hand, newState.trumpCard))
+                case Some(player) =>
+                  val scores = newState.players.map(player => s"${player.name}: ${player.score.value}")
+                  (newState, ShowBoardAndHandToPlayer(newState.board, player.hand, newState.trumpCard, scores))
                 case None         => (newState, Error("Player with such Id not found"))
               }
             })
