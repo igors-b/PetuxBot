@@ -117,9 +117,37 @@ object BotActions {
       resp         <-  Scenario.expect(text)
       command      =   Parser.parse(resp)
       response     <-  command match {
-        case MakeTurnWithCard(card) => Scenario.eval(chat.send("MakeTurnCommandParsed")) >> Scenario.eval(gameService.process(PlayerMakesTurn(playerId, card)))
+        case MakeTurnWithCard(card) => Scenario.eval(gameService.process(PlayerMakesTurn(playerId, card)))
         case _                  => ??? //Scenario.eval(gameService.process(WrongCommand))
       }
+      _            <- response match {
+
+        case ShowBoardAndHandToPlayer(board, hand, trumpCard, scores) =>
+          Scenario.eval(chat.send("Board is:")) >>
+            Scenario.eval(chat.send(board.asJson.spaces2)) >>
+            Scenario.eval(chat.send(s"Your cards:")) >>
+            Scenario.eval(chat.send(hand.asJson.spaces2)) >>
+            Scenario.eval(chat.send("Trump card is:")) >>
+            Scenario.eval(chat.send(trumpCard.asJson.spaces2)) >>
+            Scenario.eval(chat.send("Game score:")) >>
+            Scenario.eval(chat.send(scores.asJson.spaces2)) >>
+            botMakesAttack(chat, gameService)
+
+        case Error(_) =>
+          Scenario.eval(chat.send(response.asJson.spaces2)) >>
+            playerMakesTurn(chat, gameService)
+        case _ => Scenario.eval(chat.send("Error appeared"))
+      }
+    } yield ()
+
+  }
+
+  def botMakesAttack[F[_]: TelegramClient](chat: Chat, gameService: GameService[F]): Scenario[F, Unit] =
+    for {
+      _            <- Scenario.eval(chat.send("Bot makes attack"))
+      detailedChat <- Scenario.eval(chat.details)
+      playerId     =  detailedChat.id
+      response     <- Scenario.eval(gameService.process(BotMakesAttack(playerId)))
       _            <- response match {
 
         case ShowBoardAndHandToPlayer(board, hand, trumpCard, scores) =>
@@ -139,8 +167,6 @@ object BotActions {
         case _ => Scenario.eval(chat.send("Error appeared"))
       }
     } yield ()
-
-  }
 
   def botMakesTurn[F[_]: TelegramClient](chat: Chat, gameService: GameService[F]): Scenario[F, Unit] =
     for {

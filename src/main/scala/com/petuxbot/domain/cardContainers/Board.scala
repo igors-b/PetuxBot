@@ -1,8 +1,8 @@
 package com.petuxbot.domain.cardContainers
 
-import com.petuxbot.domain.Card
+import com.petuxbot.domain.{Card, Player, StrongestCard}
 
-final case class Board(cards: List[Card], cardToHit: Option[Card], strongestCard: Option[Card]) extends CardContainer {
+final case class Board(cards: List[Card], cardToHit: Option[Card], strongestCard: Option[StrongestCard]) extends CardContainer {
 
   def addCard(card: Card): Board = addCards(List(card))
 
@@ -14,7 +14,7 @@ final case class Board(cards: List[Card], cardToHit: Option[Card], strongestCard
 
   def setCardToHit(card: Card): Board = this.copy(cardToHit = Some(card))
 
-  def setStrongestCard(card: Card): Board = this.copy(strongestCard = Some(card))
+  def setStrongestCard(card: Card, ownerId: Long): Board = this.copy(strongestCard = Some(StrongestCard(card, ownerId)))
 }
 
 object Board {

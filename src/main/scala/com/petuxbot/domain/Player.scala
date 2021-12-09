@@ -10,7 +10,10 @@ case class Player(id: Long, name: String, hand: Hand, score: Score, tricks: List
 
   def removeCardsFromHand(cards: List[Card]): Player = this.copy(hand = hand.removeCards(cards))
 
-  //UserID ???
-  // dealer ???
+  def hasCard(card: Card): Boolean = this.hand.cards.contains(card)
+
+  def hasCardOfSuit(suit: Suit): Boolean = this.hand.cards.map(_.suit).contains(suit)
+
+  val cards = this.hand.cards
 
 }
