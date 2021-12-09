@@ -6,7 +6,7 @@ import cats.implicits.toFunctorOps
 import com.petuxbot.Request._
 import com.petuxbot.{GameState, Request, Response}
 import com.petuxbot.Response._
-import com.petuxbot.domain.cardContainers.{Deck, Hand, Trick}
+import com.petuxbot.domain.cardContainers.{Board, Deck, Hand, Trick}
 import com.petuxbot.CardValidator._
 import com.petuxbot.domain.{Score, StrongestCard}
 
@@ -58,7 +58,7 @@ object GameService {
 
 
 
-              } yield GameState( // up to this point ready
+              } yield GameState(
                 deck        = deck,
                 board       = newBoard,
                 discardPile = oldState.discardPile,
@@ -75,6 +75,39 @@ object GameService {
                   case None         => (oldState, Error("There is no player with such Id"))
                 }
                 case None           =>  (oldState, Error("Wrong Card")) //add error
+              }
+            })
+
+          case BotMakesTurn(playerId) =>
+            state.modify(oldState => {
+              val players = oldState.players
+              val deck = oldState.deck
+              val board = Board.Empty
+              val botOpt = players.find(_.id == 0)
+              val scores     = players.map(_.score)
+              val gameState = for {
+                bot              <- botOpt
+                card             <- bot.cards.find(card => isCardValidToMakeTurn(card, bot, scores))
+                others           =  players.diff(List(bot))
+                updatedBot       =  bot.copy(hand = bot.hand.removeCard(card))
+                updatedPlayers   =  others :+ updatedBot
+              } yield GameState(
+                deck = deck,
+                board = board.addCard(card).setCardToHit(card).setStrongestCard(card, 0),
+                discardPile = oldState.discardPile,
+                trumpCard = oldState.trumpCard,
+                whoseTurn = players.find(_.id == playerId),
+                players = updatedPlayers
+              )
+
+              gameState match {
+                case Some(newState) => newState.players.find(_.id == playerId) match {
+                  case Some(player) =>
+                    val scores = newState.players.map(player => s"${player.name}: ${player.score.value}")
+                    (newState, ShowBoardAndHandToPlayer(newState.board, player.hand, newState.trumpCard, scores))
+                  case None         => (oldState, Error("There is no player with such Id"))
+                }
+                case None           =>  (oldState, Error("Bot chosen wrong card to make turn"))
               }
             })
 
@@ -123,7 +156,7 @@ object GameService {
             state.modify(oldState => {
               val players    = oldState.players
               val scores     = players.map(_.score)
-              val board      = oldState.board
+              val board      = Board.Empty
               val playerOpt  = players.find(_.id == playerId)
               val gameState = for {
                 player        <- playerOpt
@@ -137,6 +170,51 @@ object GameService {
                 trumpCard = oldState.trumpCard,
                 whoseTurn = players.find(_.id == 0),
                 players = updatedPlayer +: others
+              )
+
+              gameState match {
+                case Some(newState) => newState.players.find(_.id == playerId) match {
+                  case Some(player) =>
+                    val scores = newState.players.map(player => s"${player.name}: ${player.score.value}")
+                    (newState, ShowBoardAndHandToPlayer(newState.board, player.hand, newState.trumpCard, scores))
+                  case None         => (oldState, Error("There is no player with such Id"))
+                }
+                case None           =>  (oldState, Error("Wrong Card")) //add error
+              }
+            })
+
+          case PlayerMakesAttack(playerId, card) =>
+            state.modify(oldState => {
+              val players = oldState.players
+              val deck = oldState.deck
+              val board = oldState.board
+              val playerOpt = players.find(_.id == playerId)
+              val gameState = for {
+                player                <- playerOpt
+                others                =  players.diff(List(player))
+                strongestCard         <- board.strongestCard
+                cardToHit             <- board.cardToHit
+                if isCardValidToMakeAttack(card, player, strongestCard, cardToHit)
+                updatedPlayer         =  player.copy(hand = player.hand.removeCard(card))
+                updatedPlayers        =  others :+ updatedPlayer
+                newStrongestCard      =  if (isCardStronger(card, strongestCard.value)) StrongestCard(card, playerId)
+                                        else strongestCard
+                newBoard              =  board.addCard(card).copy(strongestCard = Some(newStrongestCard))
+                winner                <- updatedPlayers.find(_.id == newStrongestCard.ownerId)
+                winnerWithAddedScore  = winner.copy(score = Score(winner.score.value -1))
+                winnerWithAddedTricks = winnerWithAddedScore.copy(tricks = winnerWithAddedScore.tricks :+ Trick(newBoard.cards))
+                newOthers             =  updatedPlayers.diff(List(winner))
+                newPlayers            =  newOthers :+ winnerWithAddedTricks
+
+
+
+              } yield GameState(
+                deck        = deck,
+                board       = newBoard,
+                discardPile = oldState.discardPile,
+                trumpCard   = oldState.trumpCard,
+                whoseTurn   = players.find(_.id == winnerWithAddedTricks.id),
+                players     = newPlayers
               )
 
               gameState match {
