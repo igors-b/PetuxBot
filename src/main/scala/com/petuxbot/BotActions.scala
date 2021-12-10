@@ -14,6 +14,18 @@ import com.petuxbot.domain.{Player, Score}
 import com.petuxbot.services.{CreateDeck, GameService}
 import io.circe.syntax._
 
+trait BotActions[F[_]] {
+  def greetings: Scenario[F, Unit]
+  def start(chat: Chat): Scenario[F, Unit]
+  def changeCards(chat: Chat): Scenario[F, Unit]
+  def defineWhoseTurn(chat: Chat): Scenario[F, Unit]
+  def playerMakesTurn(chat: Chat): Scenario[F, Unit]
+  def playerMakesAttack(chat: Chat): Scenario[F, Unit]
+  def botMakesAttack(chat: Chat): Scenario[F, Unit]
+  def botMakesTurn(chat: Chat): Scenario[F, Unit]
+  def resolveRound(chat: Chat): Scenario[F, Unit]
+}
+
 object BotActions {
   def greetings[F[_]: TelegramClient](gameService: GameService[F], createDeck: CreateDeck[F]): Scenario[F, Unit] =
     for {
@@ -122,7 +134,7 @@ object BotActions {
       }
       _            <- response match {
 
-        case ShowBoardAndHandToPlayer(board, hand, trumpCard, scores) =>
+        case ShowBoardAndHandToPlayer(board, hand, trumpCard, _) =>
           Scenario.eval(chat.send("Board is:")) >>
             Scenario.eval(chat.send(board.asJson.spaces2)) >>
             Scenario.eval(chat.send(s"Your cards:")) >>
@@ -163,6 +175,13 @@ object BotActions {
             Scenario.eval(chat.send(scores.asJson.spaces2)) >>
             defineWhoseTurn(chat, gameService)
 
+        case ShowTotalsToPlayer(board, scores) =>
+          Scenario.eval(chat.send("Board after your attack is:")) >>
+            Scenario.eval(chat.send(board.asJson.spaces2)) >>
+            Scenario.eval(chat.send("Game score:")) >>
+            Scenario.eval(chat.send(scores.asJson.spaces2)) >>
+            resolveRound(chat, gameService)
+
         case Error(_) =>
           Scenario.eval(chat.send(response.asJson.spaces2)) >>
             playerMakesAttack(chat, gameService)
@@ -189,6 +208,13 @@ object BotActions {
             Scenario.eval(chat.send("Game score:")) >>
             Scenario.eval(chat.send(scores.asJson.spaces2)) >>
             defineWhoseTurn(chat, gameService)
+
+        case ShowTotalsToPlayer(board, scores) =>
+          Scenario.eval(chat.send("Board after your attack is:")) >>
+            Scenario.eval(chat.send(board.asJson.spaces2)) >>
+            Scenario.eval(chat.send("Game score:")) >>
+            Scenario.eval(chat.send(scores.asJson.spaces2)) >>
+            resolveRound(chat, gameService)
 
         case Error(_) =>
           Scenario.eval(chat.send(response.asJson.spaces2)) >>
@@ -223,4 +249,15 @@ object BotActions {
       }
     } yield ()
 
+  def resolveRound[F[_]: TelegramClient](chat: Chat, gameService: GameService[F]): Scenario[F, Unit] =
+    for {
+      _         <- Scenario.eval(chat.send("Round ended!"))
+      response  <- Scenario.eval(gameService.process(ResolveRound))
+      _         <- response match {
+        case ShowTotalsToPlayer(_, scores) =>
+          Scenario.eval(chat.send("Game score after round resolvement is :")) >>
+            Scenario.eval(chat.send(scores.asJson.spaces2)) //>>
+            //resolveRound(chat, gameService)
+      }
+    } yield ()
 }

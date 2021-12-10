@@ -12,6 +12,7 @@ object Request {
   case object GetPlayerIdWhoseTurn extends Request
   final case class PlayerMakesTurn(playerId: Long, card: Card) extends Request
   final case class PlayerMakesAttack(playerId: Long, card: Card) extends Request
+  case object ResolveRound extends Request
   final case class StartRound(playerId: Long, deck: Deck) extends Request
 
   case object WrongRequest extends Request

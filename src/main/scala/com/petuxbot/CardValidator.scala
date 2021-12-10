@@ -68,6 +68,7 @@ res
       else false
     }
     else if (card.isTrump) true
-    else card.strength > strongestCard.strength
+    else if (card.suit == strongestCard.suit) card.strength > strongestCard.strength
+    else false
   }
 }
