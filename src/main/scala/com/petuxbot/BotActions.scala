@@ -4,7 +4,7 @@ import canoe.api._
 import canoe.syntax._
 import canoe.models.Chat
 import canoe.syntax.{command, text}
-import com.petuxbot.Command.{StartGame, _}
+import com.petuxbot.Command._
 import com.petuxbot.Response._
 import com.petuxbot.Request._
 import com.petuxbot.ImplicitCodecs._
@@ -32,28 +32,28 @@ object BotActions {
     new BotActions[F] {
       def greetings: Scenario[F, Unit] =
         for {
-          chat          <- Scenario.expect(command("hello").chat)
+          chat          <- Scenario.expect(command("StartGame").chat)
           detailedChat  <- Scenario.eval(chat.details)
-          id            = detailedChat.id
-          userFirstName = detailedChat.firstName.getOrElse("dear Friend")
+          id            =  detailedChat.id
+          userFirstName =  detailedChat.firstName.getOrElse("dear Friend")
           _             <- Scenario.eval(chat.send(s"Hello, $userFirstName! Would you like to start PETUX game?"))
-          player        = Player(id, userFirstName, Hand.Empty, Score(15), List.empty[Trick])
-          dealer        = Player(0, "Bot", Hand.Empty, Score(15), List.empty[Trick])
+          player        =  Player(id, userFirstName, Hand.Empty, Score(15), List.empty[Trick])
+          dealer        =  Player(0, "Bot", Hand.Empty, Score(15), List.empty[Trick])
           _             <- Scenario.eval(gameService.process(AddPlayers(List(player, dealer))))
           _             <- start(chat)
         } yield ()
 
       def start(chat: Chat): Scenario[F, Unit] =
         for {
-          _            <- Scenario.eval(chat.send("Start game by typing StartGame"))
+          _            <- Scenario.eval(chat.send("Type Deal to start new round Start game by typing StartGame"))
           detailedChat <- Scenario.eval(chat.details)
           playerId     =  detailedChat.id
           resp         <- Scenario.expect(text)
-          cmd          = Parser.parse(resp)
+          cmd          =  Parser.parse(resp)
           deck         <- Scenario.eval(createDeck.apply())
           response <- cmd match {
-            case StartGame => Scenario.eval(gameService.process(StartRound(playerId, deck)))
-            case _         => ??? //Scenario.eval(gameService.process(WrongCommand))
+            case StartNewRound => Scenario.eval(gameService.process(StartRound(playerId, deck)))
+            case _             => ??? //Scenario.eval(gameService.process(WrongCommand))
           }
           _ <- response match {
 
@@ -255,8 +255,8 @@ object BotActions {
           _         <- response match {
             case ShowTotalsToPlayer(_, scores) =>
               Scenario.eval(chat.send("Game score after round resolvement is :")) >>
-                Scenario.eval(chat.send(scores.asJson.spaces2)) //>>
-            //resolveRound(chat, gameService)
+                Scenario.eval(chat.send(scores.asJson.spaces2)) >>
+                start(chat)
           }
         } yield ()
     }
