@@ -14,8 +14,6 @@ object Request {
   final case class PlayerMakesAttack(playerId: Long, card: Card) extends Request
   case object ResolveRound extends Request
   final case class StartRound(playerId: Long, deck: Deck) extends Request
-
-  case object WrongRequest extends Request
 }
 
 

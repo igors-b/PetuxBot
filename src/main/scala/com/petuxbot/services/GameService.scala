@@ -3,11 +3,13 @@ package com.petuxbot.services
 import cats.effect.Sync
 import cats.effect.concurrent.Ref
 import cats.implicits.toFunctorOps
+import com.petuxbot.BotData.BotId
 import com.petuxbot.Request._
 import com.petuxbot.{GameState, Request, Response}
 import com.petuxbot.Response._
-import com.petuxbot.domain.cardContainers.{Board, Deck, Hand, Trick}
+import com.petuxbot.domain.cardContainers._
 import com.petuxbot.CardValidator._
+import com.petuxbot.GameError._
 import com.petuxbot.domain.{Score, StrongestCard}
 
 
@@ -38,7 +40,7 @@ object GameService {
               val players = oldState.players
               val deck = oldState.deck
               val board = oldState.board
-              val botOpt = players.find(_.id == 0)
+              val botOpt = players.find(_.id == BotId)
               val gameState = for {
                 bot              <- botOpt
                 others           =  players.diff(List(bot))
@@ -47,7 +49,7 @@ object GameService {
                 card             <- bot.cards.find(card => isCardValidToMakeAttack(card, bot, strongestCard, cardToHit))
                 updatedBot       =  bot.copy(hand = bot.hand.removeCard(card))
                 updatedPlayers   =  others :+ updatedBot
-                newStrongestCard =  if (isCardStronger(card, strongestCard.value)) StrongestCard(card, 0)
+                newStrongestCard =  if (isCardStronger(card, strongestCard.value)) StrongestCard(card, BotId)
                                     else strongestCard
                 newBoard         =  board.addCard(card).copy(strongestCard = Some(newStrongestCard))
                 winner           <- updatedPlayers.find(_.id == newStrongestCard.ownerId)
@@ -78,9 +80,9 @@ object GameService {
                       (newState, ShowTotalsToPlayer(newState.board, gameScores))
                     if (isEmptyHands) endRound
                     else continueRound
-                  case None         => (oldState, Error("There is no player with such Id"))
+                  case None         => (oldState, Error(WrongPlayerId))
                 }
-                case None           =>  (oldState, Error("Wrong Card")) //add error
+                case None           =>  (oldState, Error(WrongCard))
               }
             })
 
@@ -89,7 +91,7 @@ object GameService {
               val players = oldState.players
               val deck = oldState.deck
               val board = Board.Empty
-              val botOpt = players.find(_.id == 0)
+              val botOpt = players.find(_.id == BotId)
               val scores     = players.map(_.score)
               val gameState = for {
                 bot              <- botOpt
@@ -99,7 +101,7 @@ object GameService {
                 updatedPlayers   =  others :+ updatedBot
               } yield GameState(
                 deck = deck,
-                board = board.addCard(card).setCardToHit(card).setStrongestCard(card, 0),
+                board = board.addCard(card).setCardToHit(card).setStrongestCard(card, BotId),
                 discardPile = oldState.discardPile,
                 trumpCard = oldState.trumpCard,
                 whoseTurn = players.find(_.id == playerId),
@@ -112,9 +114,9 @@ object GameService {
                     val scores = newState.players.map(player => s"${player.name}: ${player.score.value}")
                     (newState, ShowBoardAndHandToPlayer(newState.board, player.hand, newState.trumpCard, scores))
 
-                  case None         => (oldState, Error("There is no player with such Id"))
+                  case None         => (oldState, Error(WrongPlayerId))
                 }
-                case None           =>  (oldState, Error("Bot chosen wrong card to make turn"))
+                case None           =>  (oldState, Error(WrongCard))
               }
             })
 
@@ -146,7 +148,7 @@ object GameService {
                 case Some(player) =>
                   val scores = newState.players.map(player => s"${player.name}: ${player.score.value}")
                   (newState, ShowBoardAndHandToPlayer(newState.board, player.hand, newState.trumpCard, scores))
-                case None         => (newState, Error("Player with such Id not found"))
+                case None         => (newState, Error(WrongPlayerId))
               }
             })
 
@@ -154,28 +156,28 @@ object GameService {
             state.modify(state => {
               state.whoseTurn match {
                 case Some(player) => (state, WhoseTurn(player.id))
-                case None         => ???
+                case None         => (state, Error(WhoseTurnNotSet))
               }
             })
 
           case PlayerMakesTurn(playerId, card) =>
             state.modify(oldState => {
-              val players    = oldState.players
-              val scores     = players.map(_.score)
-              val board      = Board.Empty
-              val playerOpt  = players.find(_.id == playerId)
-              val gameState = for {
+              val players     = oldState.players
+              val scores      = players.map(_.score)
+              val board       = Board.Empty
+              val playerOpt   = players.find(_.id == playerId)
+              val gameState   = for {
                 player        <- playerOpt
                 if isCardValidToMakeTurn(card, player, scores)
                 others        =  players.diff(List(player))
                 updatedPlayer =  player.copy(hand = player.hand.removeCard(card))
               } yield GameState(
-                deck = Deck.Empty,
-                board = board.addCard(card).setCardToHit(card).setStrongestCard(card, playerId),
-                discardPile = oldState.discardPile.addCards(oldState.deck.cards),
-                trumpCard = oldState.trumpCard,
-                whoseTurn = players.find(_.id == 0),
-                players = updatedPlayer +: others
+                  deck        = Deck.Empty,
+                  board       = board.addCard(card).setCardToHit(card).setStrongestCard(card, playerId),
+                  discardPile = oldState.discardPile.addCards(oldState.deck.cards),
+                  trumpCard   = oldState.trumpCard,
+                  whoseTurn   = players.find(_.id == 0),
+                  players     = updatedPlayer +: others
               )
 
               gameState match {
@@ -183,9 +185,9 @@ object GameService {
                   case Some(player) =>
                     val scores = newState.players.map(player => s"${player.name}: ${player.score.value}")
                     (newState, ShowBoardAndHandToPlayer(newState.board, player.hand, newState.trumpCard, scores))
-                  case None         => (oldState, Error("There is no player with such Id"))
+                  case None         => (oldState, Error(WrongPlayerId))
                 }
-                case None           =>  (oldState, Error("Wrong Card")) //add error
+                case None           => (oldState, Error(WrongCard))
               }
             })
 
@@ -234,41 +236,47 @@ object GameService {
                       if (isEmptyHands) endRound
                       else continueRound
 
-                  case None         => (oldState, Error("There is no player with such Id"))
+                  case None         => (oldState, Error(WrongPlayerId))
                 }
-                case None           =>  (oldState, Error("Wrong Card")) //add error
+                case None           =>  (oldState, Error(WrongCard))
               }
             })
 
           case StartRound(playerId, deck) =>
             state.modify(oldState => {
-              val players = oldState.players
-              val hands = players.map(_ => Hand.Empty)
+              val players   = oldState.players
+              val hands     = players.map(_ => Hand.Empty)
               val trumpCard = deck.cards.lastOption
-              val result: Option[GameState] = for {
-                (deck, dealtHands) <- deck.deal(hands)
-                whoseTurn = players.headOption
-                playersWithDealtHands = players zip dealtHands map {
-                  case (player, newHand) => player.addCardsToHand(newHand.cards)
-                }
-              } yield GameState(deck = deck, players = playersWithDealtHands, trumpCard = trumpCard, whoseTurn = whoseTurn)
+              val gameState =
+                for {
+                  (deck, dealtHands)    <- deck.deal(hands)
+                  whoseTurn             = players.headOption
+                  playersWithDealtHands = players zip dealtHands map {
+                    case (player, newHand) => player.addCardsToHand(newHand.cards)
+                  }
+                } yield GameState(
+                  deck = deck,
+                  players = playersWithDealtHands,
+                  trumpCard = trumpCard,
+                  whoseTurn = whoseTurn
+                )
 
-              val newState = result.getOrElse(oldState)
+              val newState = gameState.getOrElse(oldState)
 
               newState.players.find(_.id == playerId) match {
                 case Some(player) =>
                   val scores = newState.players.map(player => s"${player.name}: ${player.score.value}")
                   (newState, ShowBoardAndHandToPlayer(newState.board, player.hand, newState.trumpCard, scores))
-                case None         => (newState, Error("Player with such Id not found"))
+                case None         => (newState, Error(WrongPlayerId))
               }
             })
 
           case ResolveRound =>
             state.modify(oldState => {
-              val deck = oldState.deck
-              val board = Board.Empty
+              val deck        = oldState.deck
+              val board       = Board.Empty
               val trumpCard   = oldState.trumpCard
-              val players = oldState.players.map {
+              val players     = oldState.players.map {
                 player =>
                 if (player.tricks.isEmpty) player.copy(score = Score(player.score.value + 5))
                 else player
@@ -287,7 +295,6 @@ object GameService {
               (gameState, ShowTotalsToPlayer(board, scores))
             })
 
-          case WrongRequest => state.modify(state => (state, Error("Wrong command entered")))
           case _ => ???
         }
 

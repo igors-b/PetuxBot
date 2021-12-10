@@ -3,8 +3,8 @@ package com.petuxbot
 import canoe.api._
 import cats.effect.{ExitCode, IO, IOApp}
 import fs2.Stream
-import com.petuxbot.BotToken.Token
-import com.petuxbot.services.{CreateDeck, GameService, Shuffle}
+import com.petuxbot.BotData.Token
+import com.petuxbot.services.{CreateDeck, GameService, ResponseErrorWrapper, Shuffle}
 
 object Main extends IOApp {
 
@@ -13,10 +13,11 @@ object Main extends IOApp {
       gameService <- GameService.of[IO]
       shuffle = Shuffle[IO]
       createDeck = CreateDeck(shuffle)
+      errorWrapper = ResponseErrorWrapper[IO]
       res <- Stream
       .resource(TelegramClient.global[IO](Token))
       .flatMap { implicit client =>
-        val botActions = BotActions[IO](gameService, createDeck)
+        val botActions = BotActions[IO](gameService, createDeck, errorWrapper)
         Bot.polling[IO].follow(botActions.greetings) }
         .compile.drain.as(ExitCode.Success)
     } yield res
