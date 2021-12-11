@@ -294,10 +294,6 @@ object GameService {
 
               (gameState, ShowTotalsToPlayer(board, scores))
             })
-
-          case _ => ???
         }
-
     }
-
 }

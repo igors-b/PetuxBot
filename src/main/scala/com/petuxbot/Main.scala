@@ -10,17 +10,19 @@ object Main extends IOApp {
 
   def run(args: List[String]): IO[ExitCode] = {
     for {
-      gameService <- GameService.of[IO]
-      shuffle = Shuffle[IO]
-      createDeck = CreateDeck(shuffle)
-      errorWrapper = ResponseErrorWrapper[IO]
-      res <- Stream
-      .resource(TelegramClient.global[IO](Token))
-      .flatMap { implicit client =>
-        val botActions = BotActions[IO](gameService, createDeck, errorWrapper)
-        Bot.polling[IO].follow(botActions.greetings) }
-        .compile.drain.as(ExitCode.Success)
-    } yield res
-
+      gameService  <- GameService.of[IO]
+      shuffle      =  Shuffle[IO]
+      createDeck   =  CreateDeck(shuffle)
+      errorWrapper =  ResponseErrorWrapper[IO]
+      result       <- Stream
+        .resource(TelegramClient.global[IO](Token))
+        .flatMap { implicit client =>
+          val botActions = BotActions[IO](gameService, createDeck, errorWrapper)
+          Bot.polling[IO].follow(botActions.greetings)
+        }
+        .compile
+        .drain
+        .as(ExitCode.Success)
+    } yield result
   }
 }
