@@ -1,6 +1,6 @@
 package com.petuxbot
 
-import com.petuxbot.Command._
+import com.petuxbot.Request._
 import com.petuxbot.domain.Rank.Ranks
 import com.petuxbot.domain.Suit.Suits
 import com.petuxbot.domain._
@@ -37,15 +37,15 @@ object Codecs {
 
   implicit val responseCodec: Codec[Response] = deriveCodec[Response]
 
-  implicit val commandEncoder: Encoder[Command] = Encoder.instance {
+  implicit val commandEncoder: Encoder[Request] = Encoder.instance {
     case StartNewRound            => Encoder.encodeString("deal")
     case cc @ ChangeCards(_)      => cc.asJson
     case mt @ MakeTurnWithCard(_) => mt.asJson
   }
 
-  implicit val commandDecoder: Decoder[Command] =
-    List[Decoder[Command]](
-      Decoder.decodeString.emap(str => if (str == "deal") Right(StartNewRound) else Left("wrong command")).widen,
+  implicit val commandDecoder: Decoder[Request] =
+    List[Decoder[Request]](
+      Decoder.decodeString.emap(str => if (str == "deal") Right(StartNewRound) else Left("wrong request")).widen,
       Decoder[ChangeCards].widen,
       Decoder[MakeTurnWithCard].widen
     ).reduce(_ or _)

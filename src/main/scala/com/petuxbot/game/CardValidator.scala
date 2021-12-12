@@ -24,7 +24,7 @@ object CardValidator {
       cardsOfRequiredSuit
         .filter(_.strength > strongestCard.value.strength)
 
-    val res =
+    val result =
       if (player.hasCard(card)) {
         if (!cardToHit.isTrump) {
           if (player.hasCardOfSuit(cardToHit.suit)) {
@@ -51,14 +51,15 @@ object CardValidator {
         } else true
       } else false
 
-    res
+    result
   }
 
   def isCardStronger(card: Card, strongestCard: Card): Boolean = {
     if (strongestCard.isTrump) {
       if (card.isTrump) card.strength > strongestCard.strength
       else false
-    } else if (card.isTrump) true
+    }
+    else if (card.isTrump) true
     else if (card.suit == strongestCard.suit) card.strength > strongestCard.strength
     else false
   }

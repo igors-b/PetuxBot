@@ -4,16 +4,18 @@ import canoe.api._
 import canoe.models.Chat
 import canoe.models.messages.TextMessage
 import canoe.syntax._
+import cats.Applicative
 import com.petuxbot.BotData.BotId
-import com.petuxbot.Command._
-import com.petuxbot.game.GameError.WrongCommand
+import com.petuxbot.Request._
+import com.petuxbot.game.GameError.{ParsingError, WrongRequest}
 import com.petuxbot.Codecs._
 import com.petuxbot.Parser
-import com.petuxbot.Request._
+import com.petuxbot.Command._
 import com.petuxbot.Response._
 import com.petuxbot.domain.cardcontainers._
 import com.petuxbot.domain.{Player, Score}
 import io.circe.syntax._
+import cats.syntax.all._
 
 trait BotService[F[_]] {
   def greetings: Scenario[F, Unit]
@@ -21,7 +23,7 @@ trait BotService[F[_]] {
 
 object BotService {
 
-  def apply[F[_]: TelegramClient](gameService: GameService[F], createDeck: DeckService[F], errorWrapper: ResponseErrorWrapper[F]): BotService[F] =
+  def apply[F[_]: TelegramClient: Applicative](gameService: GameService[F], createDeck: DeckService[F]): BotService[F] =
     new BotService[F] {
       def greetings: Scenario[F, Unit] =
         for {
@@ -62,19 +64,19 @@ object BotService {
           _              <- Scenario.eval(chat.send("Type Deal to start new round:"))
           detailedChat   <- Scenario.eval(chat.details)
           playerId       =  detailedChat.id
-          resp           <- Scenario.expect(text)
+          requestString  <- Scenario.expect(text)
           deck           <- Scenario.eval(createDeck.of)
-          response       <- Parser.parse(resp) match {
-            case Right(cmd)  => cmd match {
-              case StartNewRound => Scenario.eval(gameService.process(StartRound(playerId, deck)))
-              case _             => Scenario.eval(errorWrapper(Error(WrongCommand)))
+          response       <- Parser.parse(requestString) match {
+            case Right(request)  => request match {
+              case StartNewRound   => Scenario.eval(gameService.process(StartRound(playerId, deck)))
+              case _               => Scenario.eval(Error(WrongRequest).pure)
             }
-            case Left(error) => Scenario.eval(errorWrapper(Error(error)))
+            case Left(error) => Scenario.eval(Error(ParsingError(error.getMessage)).pure)
           }
 
           _ <- response match {
 
-            case s @ ShowBoardAndHandToPlayer(_, _, _, _) =>
+            case s: ShowBoardAndHandToPlayer =>
               Scenario.eval(chat.send(s"Round started")) >>
                 showStatsToPlayer(chat, s) >>
                 changeCards(chat)
@@ -88,21 +90,21 @@ object BotService {
 
       private def changeCards(chat: Chat): Scenario[F, Unit] =
         for {
-          _            <-  Scenario.eval(chat.send(s"Would you like to change some cards?"))
-          _            <-  Scenario.eval(chat.send(s"Send me the list of cards you would like to change"))
-          detailedChat <-  Scenario.eval(chat.details)
-          playerId     =   detailedChat.id
-          resp         <-  Scenario.expect(text)
-          response     <-   Parser.parse(resp) match {
-            case Right(cmd)  => cmd match {
+          _              <-  Scenario.eval(chat.send(s"Would you like to change some cards?"))
+          _              <-  Scenario.eval(chat.send(s"Send me the list of cards you would like to change"))
+          detailedChat   <-  Scenario.eval(chat.details)
+          playerId       =   detailedChat.id
+          requestString  <-  Scenario.expect(text)
+          response       <-   Parser.parse(requestString) match {
+            case Right(request)  => request match {
               case ChangeCards(cards) => Scenario.eval(gameService.process(ChangeCardsForPlayer(playerId, cards)))
-              case _                  => Scenario.eval(errorWrapper(Error(WrongCommand)))
+              case _                  => Scenario.eval(Error(WrongRequest).pure)
             }
-            case Left(error) => Scenario.eval(errorWrapper(Error(error)))
+            case Left(error) => Scenario.eval(Error(ParsingError(error.getMessage)).pure)
           }
           _ <- response match {
 
-            case s @ ShowBoardAndHandToPlayer(_, _, _, _) =>
+            case s: ShowBoardAndHandToPlayer =>
               showStatsToPlayer(chat, s) >>
                 defineWhoseTurn(chat)
 
@@ -125,27 +127,27 @@ object BotService {
               if (playerId == id) playerMakesTurn(chat)
               else botMakesTurn(chat)
             case Error(_) => Scenario.eval(chat.send(response.asJson.spaces2))
-            case _ => Scenario.eval(chat.send("Wrong response from server"))
+            case _        => Scenario.eval(chat.send("Wrong response from server"))
           }
         } yield ()
 
 
       private def playerMakesTurn(chat: Chat): Scenario[F, Unit] =
         for {
-          _ <- Scenario.eval(chat.send("Now it is Your turn. Put card on the Board"))
-          detailedChat <-  Scenario.eval(chat.details)
-          playerId     =   detailedChat.id
-          resp         <-  Scenario.expect(text)
-          response     <-  Parser.parse(resp) match {
-            case Right(cmd) => cmd match {
+          _              <-  Scenario.eval(chat.send("Now it is Your turn. Put card on the Board"))
+          detailedChat   <-  Scenario.eval(chat.details)
+          playerId       =   detailedChat.id
+          requestString  <-  Scenario.expect(text)
+          response       <-  Parser.parse(requestString) match {
+            case Right(request) => request match {
               case MakeTurnWithCard(card) => Scenario.eval(gameService.process(PlayerMakesTurn(playerId, card)))
-              case _                      => Scenario.eval(errorWrapper(Error(WrongCommand)))
+              case _                      => Scenario.eval(Error(WrongRequest).pure)
             }
-            case Left(error) => Scenario.eval(errorWrapper(Error(error)))
+            case Left(error) => Scenario.eval(Error(ParsingError(error.getMessage)).pure)
           }
           _            <- response match {
 
-            case s @ ShowBoardAndHandToPlayer(_, _, _, _) =>
+            case s: ShowBoardAndHandToPlayer =>
               showStatsToPlayer(chat, s) >>
                 botMakesAttack(chat)
 
@@ -158,25 +160,25 @@ object BotService {
 
       private def playerMakesAttack(chat: Chat): Scenario[F, Unit] =
         for {
-          _            <-  Scenario.eval(chat.send("Now it's time to ATTACK!"))
-          _            <-  Scenario.eval(chat.send("Put card on the Board:"))
-          detailedChat <-  Scenario.eval(chat.details)
-          playerId     =   detailedChat.id
-          resp         <-  Scenario.expect(text)
-          response     <-  Parser.parse(resp) match {
-            case Right(cmd) => cmd match {
+          _              <-  Scenario.eval(chat.send("Now it's time to ATTACK!"))
+          _              <-  Scenario.eval(chat.send("Put card on the Board:"))
+          detailedChat   <-  Scenario.eval(chat.details)
+          playerId       =   detailedChat.id
+          requestString  <-  Scenario.expect(text)
+          response       <-  Parser.parse(requestString) match {
+            case Right(request) => request match {
               case MakeTurnWithCard(card) => Scenario.eval(gameService.process(PlayerMakesAttack(playerId, card)))
-              case _                      => Scenario.eval(errorWrapper(Error(WrongCommand)))
+              case _                      => Scenario.eval(Error(WrongRequest).pure)
             }
-            case Left(error) => Scenario.eval(errorWrapper(Error(error)))
+            case Left(error) => Scenario.eval(Error(ParsingError(error.getMessage)).pure)
           }
           _            <- response match {
 
-            case s @ ShowBoardAndHandToPlayer(_, _, _, _) =>
+            case s: ShowBoardAndHandToPlayer =>
               showStatsToPlayer(chat, s) >>
                 defineWhoseTurn(chat)
 
-            case s @ ShowTotalsToPlayer(_, _) =>
+            case s: ShowTotalsToPlayer =>
               showTotalsToPlayer(chat, s)
                 resolveRound(chat)
 
@@ -196,11 +198,11 @@ object BotService {
           response     <- Scenario.eval(gameService.process(BotMakesAttack(playerId)))
           _            <- response match {
 
-            case s @ ShowBoardAndHandToPlayer(_, _, _, _) =>
+            case s: ShowBoardAndHandToPlayer =>
               showStatsToPlayer(chat, s) >>
                 defineWhoseTurn(chat)
 
-            case s @ ShowTotalsToPlayer(_, _) =>
+            case s: ShowTotalsToPlayer =>
               showTotalsToPlayer(chat, s) >>
                 resolveRound(chat)
 
@@ -213,13 +215,13 @@ object BotService {
 
       private def botMakesTurn(chat: Chat): Scenario[F, Unit] =
         for {
-          _ <- Scenario.eval(chat.send("Now it is Bot's turn."))
+          _            <- Scenario.eval(chat.send("Now it is Bot's turn."))
           detailedChat <- Scenario.eval(chat.details)
           playerId     =  detailedChat.id
           response     <- Scenario.eval(gameService.process(BotMakesTurn(playerId)))
           _            <- response match {
 
-            case s @ ShowBoardAndHandToPlayer(_, _, _, _) =>
+            case s: ShowBoardAndHandToPlayer =>
               showStatsToPlayer(chat, s) >>
                 playerMakesAttack(chat)
 
