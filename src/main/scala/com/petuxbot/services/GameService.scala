@@ -5,12 +5,13 @@ import cats.effect.concurrent.Ref
 import cats.implicits.toFunctorOps
 import com.petuxbot.BotData.BotId
 import com.petuxbot.Request._
-import com.petuxbot.{GameState, Request, Response}
+import com.petuxbot.{Request, Response}
 import com.petuxbot.Response._
 import com.petuxbot.domain.cardcontainers._
-import com.petuxbot.CardValidator._
-import com.petuxbot.GameError._
+import com.petuxbot.game.GameError._
 import com.petuxbot.domain.{Score, StrongestCard}
+import com.petuxbot.game.GameState
+import com.petuxbot.game.CardValidator._
 
 
 trait GameService[F[_]]{

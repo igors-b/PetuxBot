@@ -1,20 +1,18 @@
-package com.petuxbot
+package com.petuxbot.services
 
 import canoe.api._
-import canoe.syntax._
 import canoe.models.Chat
 import canoe.models.messages.TextMessage
-import canoe.syntax.{command, text}
+import canoe.syntax._
 import com.petuxbot.BotData.BotId
 import com.petuxbot.Command._
-import com.petuxbot.GameError.WrongCommand
-import com.petuxbot.Response._
+import com.petuxbot.game.GameError.WrongCommand
+import com.petuxbot.Codecs._
+import com.petuxbot.Parser
 import com.petuxbot.Request._
-import com.petuxbot.ImplicitCodecs._
-import com.petuxbot.Request.AddPlayers
+import com.petuxbot.Response._
 import com.petuxbot.domain.cardcontainers._
 import com.petuxbot.domain.{Player, Score}
-import com.petuxbot.services.{CreateDeck, GameService, ResponseErrorWrapper}
 import io.circe.syntax._
 
 trait BotService[F[_]] {
@@ -23,11 +21,11 @@ trait BotService[F[_]] {
 
 object BotService {
 
-  def apply[F[_]: TelegramClient](gameService: GameService[F], createDeck: CreateDeck[F], errorWrapper: ResponseErrorWrapper[F]): BotService[F] =
+  def apply[F[_]: TelegramClient](gameService: GameService[F], createDeck: DeckService[F], errorWrapper: ResponseErrorWrapper[F]): BotService[F] =
     new BotService[F] {
       def greetings: Scenario[F, Unit] =
         for {
-          chat          <- Scenario.expect(command("StartGame").chat)
+          chat          <- Scenario.expect(command("start").chat)
           detailedChat  <- Scenario.eval(chat.details)
           playerId      =  detailedChat.id
           userFirstName =  detailedChat.firstName.getOrElse("dear Friend")
@@ -65,7 +63,7 @@ object BotService {
           detailedChat   <- Scenario.eval(chat.details)
           playerId       =  detailedChat.id
           resp           <- Scenario.expect(text)
-          deck           <- Scenario.eval(createDeck.apply())
+          deck           <- Scenario.eval(createDeck.of)
           response       <- Parser.parse(resp) match {
             case Right(cmd)  => cmd match {
               case StartNewRound => Scenario.eval(gameService.process(StartRound(playerId, deck)))

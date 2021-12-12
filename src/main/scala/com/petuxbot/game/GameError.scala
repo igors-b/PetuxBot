@@ -1,4 +1,4 @@
-package com.petuxbot
+package com.petuxbot.game
 
 sealed trait GameError
 

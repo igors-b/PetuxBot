@@ -1,6 +1,5 @@
-package com.petuxbot
+package com.petuxbot.game
 
-import cats.effect.Sync
 import com.petuxbot.domain._
 import com.petuxbot.domain.cardcontainers.{Board, Deck, DiscardPile}
 
@@ -12,12 +11,3 @@ final case class GameState (
   whoseTurn: Option[Player] = None,
   trumpCard: Option[Card] = None
 )
-
-object GameState {
-
-  def make[F[_]: Sync](players: List[Player]): F[GameState] = {
-    Sync[F].delay {
-      GameState(players = players)
-    }
-  }
-}

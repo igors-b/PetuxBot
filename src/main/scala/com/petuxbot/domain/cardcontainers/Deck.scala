@@ -1,12 +1,8 @@
 package com.petuxbot.domain.cardcontainers
 
-import cats.FlatMap
-import cats.data.NonEmptyList
 import cats.implicits._
-import com.petuxbot.domain.Rank.Ranks
-import com.petuxbot.domain.Suit.Suits
 import com.petuxbot.domain.Card
-import com.petuxbot.services.Shuffle
+
 
 final case class Deck(cards: List[Card]) {
 
@@ -35,18 +31,4 @@ final case class Deck(cards: List[Card]) {
 
 object Deck {
   lazy val Empty: Deck = Deck(List.empty)
-
-  def of[F[_] : FlatMap](shuffle: Shuffle[F]): F[Deck] = {
-
-    val allCards: NonEmptyList[Card] = Ranks
-      .flatMap(rank => Suits.map(suit => Card(rank, suit)))
-
-    for {
-      shuffledCards           <- shuffle(allCards.toList)
-      shuffleCardsNel         = NonEmptyList.fromListUnsafe(shuffledCards)
-      trumpCard               = shuffleCardsNel.last.copy(isTrump = true)
-      shuffledCardsWithTrumps = shuffledCards
-                                 .map(card => if (card.suit == trumpCard.suit) card.copy(isTrump = true) else card)
-    } yield Deck(shuffledCardsWithTrumps)
-  }
 }

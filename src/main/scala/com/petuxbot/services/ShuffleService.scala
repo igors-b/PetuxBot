@@ -5,11 +5,11 @@ import cats.effect.Sync
 import scala.collection.BuildFrom
 import scala.util.Random
 
-trait Shuffle[F[_]] {
+trait ShuffleService[F[_]] {
   def apply[T, C](xs: IterableOnce[T])(implicit bf: BuildFrom[xs.type, T, C]): F[C]
 }
-object Shuffle {
-  def apply[F[_]: Sync]: Shuffle[F] = new Shuffle[F] {
+object ShuffleService {
+  def apply[F[_]: Sync]: ShuffleService[F] = new ShuffleService[F] {
     def apply[T, C](xs: IterableOnce[T])(implicit bf: BuildFrom[xs.type, T, C]): F[C] =
       Sync[F].delay(Random.shuffle(xs))
   }
