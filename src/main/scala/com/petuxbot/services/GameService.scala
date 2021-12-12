@@ -126,9 +126,9 @@ object GameService {
               val players = oldState.players
               val deck = oldState.deck
               val playerOpt = players.find(_.id == playerId)
-              val result: Option[GameState] = for {
+              val gameState: Option[GameState] = for {
                 player                   <- playerOpt
-                playerAfterCardsRemoved  =  player.removeCardsFromHand(cards)
+                playerAfterCardsRemoved  <-  player.removeCardsFromHand(cards)
                 otherPlayers             =  players.diff(List(player))
                 (newDeck, dealtHands)    <- deck.deal(List(playerAfterCardsRemoved.hand))
                 playerWithDealtHand      =  List(playerAfterCardsRemoved) zip dealtHands map {
@@ -143,13 +143,14 @@ object GameService {
                   players     = playerWithDealtHand ++ otherPlayers
               )
 
-              val newState = result.getOrElse(oldState)
-
-              newState.players.find(_.id == playerId) match {
-                case Some(player) =>
-                  val scores = newState.players.map(player => s"${player.name}: ${player.score.value}")
-                  (newState, ShowBoardAndHandToPlayer(newState.board, player.hand, newState.trumpCard, scores))
-                case None         => (newState, Error(WrongPlayerId))
+              gameState match {
+                case Some(newState) => newState.players.find(_.id == playerId) match {
+                  case Some(player) =>
+                    val scores = newState.players.map(player => s"${player.name}: ${player.score.value}")
+                    (newState, ShowBoardAndHandToPlayer(newState.board, player.hand, newState.trumpCard, scores))
+                  case None         => (oldState, Error(WrongPlayerId))
+                }
+                case None           => (oldState, Error(WrongCard))
               }
             })
 
