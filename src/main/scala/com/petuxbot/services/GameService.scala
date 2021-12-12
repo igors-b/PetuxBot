@@ -7,7 +7,7 @@ import com.petuxbot.BotData.BotId
 import com.petuxbot.Request._
 import com.petuxbot.{GameState, Request, Response}
 import com.petuxbot.Response._
-import com.petuxbot.domain.cardContainers._
+import com.petuxbot.domain.cardcontainers._
 import com.petuxbot.CardValidator._
 import com.petuxbot.GameError._
 import com.petuxbot.domain.{Score, StrongestCard}

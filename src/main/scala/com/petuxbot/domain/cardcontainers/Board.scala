@@ -1,8 +1,8 @@
-package com.petuxbot.domain.cardContainers
+package com.petuxbot.domain.cardcontainers
 
-import com.petuxbot.domain.{Card, Player, StrongestCard}
+import com.petuxbot.domain.{Card, StrongestCard}
 
-final case class Board(cards: List[Card], cardToHit: Option[Card], strongestCard: Option[StrongestCard]) extends CardContainer {
+final case class Board(cards: List[Card], cardToHit: Option[Card], strongestCard: Option[StrongestCard]) {
 
   def addCard(card: Card): Board = addCards(List(card))
 

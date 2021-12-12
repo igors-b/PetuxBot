@@ -1,7 +1,7 @@
 package com.petuxbot.services
 
 import cats.FlatMap
-import com.petuxbot.domain.cardContainers.Deck
+import com.petuxbot.domain.cardcontainers.Deck
 
 trait CreateDeck[F[_]] {
   def apply(): F[Deck]

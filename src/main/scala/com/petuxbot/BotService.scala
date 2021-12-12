@@ -12,27 +12,19 @@ import com.petuxbot.Response._
 import com.petuxbot.Request._
 import com.petuxbot.ImplicitCodecs._
 import com.petuxbot.Request.AddPlayers
-import com.petuxbot.domain.cardContainers._
+import com.petuxbot.domain.cardcontainers._
 import com.petuxbot.domain.{Player, Score}
 import com.petuxbot.services.{CreateDeck, GameService, ResponseErrorWrapper}
 import io.circe.syntax._
 
-trait BotActions[F[_]] {
+trait BotService[F[_]] {
   def greetings: Scenario[F, Unit]
-  def start(chat: Chat): Scenario[F, Unit]
-  def changeCards(chat: Chat): Scenario[F, Unit]
-  def defineWhoseTurn(chat: Chat): Scenario[F, Unit]
-  def playerMakesTurn(chat: Chat): Scenario[F, Unit]
-  def playerMakesAttack(chat: Chat): Scenario[F, Unit]
-  def botMakesAttack(chat: Chat): Scenario[F, Unit]
-  def botMakesTurn(chat: Chat): Scenario[F, Unit]
-  def resolveRound(chat: Chat): Scenario[F, Unit]
 }
 
-object BotActions {
+object BotService {
 
-  def apply[F[_]: TelegramClient](gameService: GameService[F], createDeck: CreateDeck[F], errorWrapper: ResponseErrorWrapper[F]): BotActions[F] =
-    new BotActions[F] {
+  def apply[F[_]: TelegramClient](gameService: GameService[F], createDeck: CreateDeck[F], errorWrapper: ResponseErrorWrapper[F]): BotService[F] =
+    new BotService[F] {
       def greetings: Scenario[F, Unit] =
         for {
           chat          <- Scenario.expect(command("StartGame").chat)
@@ -49,7 +41,25 @@ object BotActions {
           }
         } yield ()
 
-      def start(chat: Chat): Scenario[F, Unit] =
+      private def showStatsToPlayer(chat: Chat, showBoardAndHandToPlayer: ShowBoardAndHandToPlayer): Scenario[F, TextMessage] = {
+        Scenario.eval(chat.send("Board is:")) >>
+          Scenario.eval(chat.send(showBoardAndHandToPlayer.board.asJson.spaces2)) >>
+          Scenario.eval(chat.send(s"Your cards:")) >>
+          Scenario.eval(chat.send(showBoardAndHandToPlayer.hand.asJson.spaces2)) >>
+          Scenario.eval(chat.send("Trump card is:")) >>
+          Scenario.eval(chat.send(showBoardAndHandToPlayer.trumpCard.asJson.spaces2)) >>
+          Scenario.eval(chat.send("Game score:")) >>
+          Scenario.eval(chat.send(showBoardAndHandToPlayer.scores.asJson.spaces2))
+      }
+
+      private def showTotalsToPlayer(chat: Chat, showTotalsToPlayer: ShowTotalsToPlayer): Scenario[F, TextMessage] = {
+        Scenario.eval(chat.send("Board is:")) >>
+          Scenario.eval(chat.send(showTotalsToPlayer.board.asJson.spaces2)) >>
+          Scenario.eval(chat.send("Game score:")) >>
+          Scenario.eval(chat.send(showTotalsToPlayer.scores.asJson.spaces2))
+      }
+
+      private def start(chat: Chat): Scenario[F, Unit] =
         for {
           _              <- Scenario.eval(chat.send("Type Deal to start new round:"))
           detailedChat   <- Scenario.eval(chat.details)
@@ -78,7 +88,7 @@ object BotActions {
           }
         } yield ()
 
-      def changeCards(chat: Chat): Scenario[F, Unit] =
+      private def changeCards(chat: Chat): Scenario[F, Unit] =
         for {
           _            <-  Scenario.eval(chat.send(s"Would you like to change some cards?"))
           _            <-  Scenario.eval(chat.send(s"Send me the list of cards you would like to change"))
@@ -106,7 +116,7 @@ object BotActions {
         } yield ()
 
 
-      def defineWhoseTurn(chat: Chat): Scenario[F, Unit] =
+      private def defineWhoseTurn(chat: Chat): Scenario[F, Unit] =
         for {
           _            <- Scenario.eval(chat.send(s"Requesting playerID whose turn"))
           detailedChat <- Scenario.eval(chat.details)
@@ -122,7 +132,7 @@ object BotActions {
         } yield ()
 
 
-      def playerMakesTurn(chat: Chat): Scenario[F, Unit] =
+      private def playerMakesTurn(chat: Chat): Scenario[F, Unit] =
         for {
           _ <- Scenario.eval(chat.send("Now it is Your turn. Put card on the Board"))
           detailedChat <-  Scenario.eval(chat.details)
@@ -148,7 +158,7 @@ object BotActions {
           }
         } yield ()
 
-      def playerMakesAttack(chat: Chat): Scenario[F, Unit] =
+      private def playerMakesAttack(chat: Chat): Scenario[F, Unit] =
         for {
           _            <-  Scenario.eval(chat.send("Now it's time to ATTACK!"))
           _            <-  Scenario.eval(chat.send("Put card on the Board:"))
@@ -180,7 +190,7 @@ object BotActions {
         } yield ()
 
 
-      def botMakesAttack(chat: Chat): Scenario[F, Unit] =
+      private def botMakesAttack(chat: Chat): Scenario[F, Unit] =
         for {
           _            <- Scenario.eval(chat.send("Bot makes attack"))
           detailedChat <- Scenario.eval(chat.details)
@@ -203,7 +213,7 @@ object BotActions {
           }
         } yield ()
 
-      def botMakesTurn(chat: Chat): Scenario[F, Unit] =
+      private def botMakesTurn(chat: Chat): Scenario[F, Unit] =
         for {
           _ <- Scenario.eval(chat.send("Now it is Bot's turn."))
           detailedChat <- Scenario.eval(chat.details)
@@ -222,7 +232,7 @@ object BotActions {
           }
         } yield ()
 
-      def resolveRound(chat: Chat): Scenario[F, Unit] =
+      private def resolveRound(chat: Chat): Scenario[F, Unit] =
         for {
           _         <- Scenario.eval(chat.send("Round ended!"))
           response  <- Scenario.eval(gameService.process(ResolveRound))
@@ -234,23 +244,5 @@ object BotActions {
             case _ => Scenario.eval(chat.send("Wrong response from server"))
           }
         } yield ()
-
-      def showStatsToPlayer(chat: Chat, showBoardAndHandToPlayer: ShowBoardAndHandToPlayer): Scenario[F, TextMessage] = {
-        Scenario.eval(chat.send("Board is:")) >>
-          Scenario.eval(chat.send(showBoardAndHandToPlayer.board.asJson.spaces2)) >>
-          Scenario.eval(chat.send(s"Your cards:")) >>
-          Scenario.eval(chat.send(showBoardAndHandToPlayer.hand.asJson.spaces2)) >>
-          Scenario.eval(chat.send("Trump card is:")) >>
-          Scenario.eval(chat.send(showBoardAndHandToPlayer.trumpCard.asJson.spaces2)) >>
-          Scenario.eval(chat.send("Game score:")) >>
-          Scenario.eval(chat.send(showBoardAndHandToPlayer.scores.asJson.spaces2))
-      }
-
-      def showTotalsToPlayer(chat: Chat, showTotalsToPlayer: ShowTotalsToPlayer): Scenario[F, TextMessage] = {
-        Scenario.eval(chat.send("Board is:")) >>
-          Scenario.eval(chat.send(showTotalsToPlayer.board.asJson.spaces2)) >>
-          Scenario.eval(chat.send("Game score:")) >>
-          Scenario.eval(chat.send(showTotalsToPlayer.scores.asJson.spaces2))
-      }
     }
 }

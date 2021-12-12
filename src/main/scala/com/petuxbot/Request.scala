@@ -1,7 +1,7 @@
 package com.petuxbot
 
 import com.petuxbot.domain.{Card, Player}
-import com.petuxbot.domain.cardContainers.Deck
+import com.petuxbot.domain.cardcontainers.Deck
 
 sealed trait Request
 object Request {

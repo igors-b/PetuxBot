@@ -1,5 +1,5 @@
 package com.petuxbot
-import com.petuxbot.domain.cardContainers.{Board, Hand}
+import com.petuxbot.domain.cardcontainers.{Board, Hand}
 import com.petuxbot.domain.Card
 sealed trait Response
 

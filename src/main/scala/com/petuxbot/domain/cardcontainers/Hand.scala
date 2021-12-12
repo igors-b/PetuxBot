@@ -1,8 +1,8 @@
-package com.petuxbot.domain.cardContainers
+package com.petuxbot.domain.cardcontainers
 
 import com.petuxbot.domain.Card
 
-final case class Hand(cards: List[Card]) extends CardContainer {
+final case class Hand(cards: List[Card]) {
 
   def addCard(card: Card): Hand = addCards(List(card))
 

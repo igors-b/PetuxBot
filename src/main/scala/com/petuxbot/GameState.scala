@@ -2,7 +2,7 @@ package com.petuxbot
 
 import cats.effect.Sync
 import com.petuxbot.domain._
-import com.petuxbot.domain.cardContainers.{Board, Deck, DiscardPile}
+import com.petuxbot.domain.cardcontainers.{Board, Deck, DiscardPile}
 
 final case class GameState (
   deck: Deck = Deck.Empty,

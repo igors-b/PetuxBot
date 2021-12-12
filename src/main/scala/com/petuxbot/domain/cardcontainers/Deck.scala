@@ -1,4 +1,4 @@
-package com.petuxbot.domain.cardContainers
+package com.petuxbot.domain.cardcontainers
 
 import cats.FlatMap
 import cats.data.NonEmptyList
@@ -8,7 +8,7 @@ import com.petuxbot.domain.Suit.Suits
 import com.petuxbot.domain.Card
 import com.petuxbot.services.Shuffle
 
-final case class Deck(cards: List[Card]) extends CardContainer {
+final case class Deck(cards: List[Card]) {
 
   def addCard(card: Card): Deck = addCards(List(card))
 
