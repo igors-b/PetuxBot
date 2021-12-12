@@ -201,7 +201,7 @@ object BotService {
                 defineWhoseTurn(chat)
 
             case s @ ShowTotalsToPlayer(_, _) =>
-              showTotalsToPlayer(chat, s)
+              showTotalsToPlayer(chat, s) >>
                 resolveRound(chat)
 
             case Error(_) =>
