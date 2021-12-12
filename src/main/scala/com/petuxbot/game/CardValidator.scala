@@ -8,6 +8,7 @@ object CardValidator {
       scores.exists(_.value <= 3) && card.isTrump || !scores.exists(_.value <= 3)
     else false
 
+  //ToDo Try to refactor this nested hell
   def isCardValidToMakeAttack(
     card: Card,
     player: Player, strongestCard: StrongestCard,
