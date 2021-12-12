@@ -77,8 +77,8 @@ object GameService {
                     val isEmptyHands    = playerCardsLeft.contains(0)
                     val gameScores      = newState.players.map(player => s"${player.name}: ${player.score.value}")
                     val continueRound   =
-                      (newState, ShowBoardAndHandToPlayer(newState.board, player.hand, newState.trumpCard, gameScores))
-                    val endRound        = (newState, ShowTotalsToPlayer(newState.board, gameScores))
+                      (newState, GameStateData(newState.board, player.hand, newState.trumpCard, gameScores))
+                    val endRound        = (newState, Totals(newState.board, gameScores))
                     if (isEmptyHands) endRound
                     else continueRound
                   case None         => (oldState, Error(WrongPlayerId(s"Player with provided playerId: $playerId not found in modified game state list of players")))
@@ -113,7 +113,7 @@ object GameService {
                 case Right(newState) => newState.players.find(_.id == playerId) match {
                   case Some(player) =>
                     val scores = newState.players.map(player => s"${player.name}: ${player.score.value}")
-                    (newState, ShowBoardAndHandToPlayer(newState.board, player.hand, newState.trumpCard, scores))
+                    (newState, GameStateData(newState.board, player.hand, newState.trumpCard, scores))
 
                   case None        => (oldState, Error(WrongPlayerId(s"Player with provided playerId: $playerId not found in modified game state list of players")))
                 }
@@ -148,7 +148,7 @@ object GameService {
                 case Right(newState) => newState.players.find(_.id == playerId) match {
                   case Some(player) =>
                     val scores = newState.players.map(player => s"${player.name}: ${player.score.value}")
-                    (newState, ShowBoardAndHandToPlayer(newState.board, player.hand, newState.trumpCard, scores))
+                    (newState, GameStateData(newState.board, player.hand, newState.trumpCard, scores))
                   case None        => (oldState, Error(WrongPlayerId(s"Player with provided playerId: $playerId not found in modified game state list of players")))
                 }
                 case Left(gameError) =>  (oldState, Error(gameError))
@@ -188,7 +188,7 @@ object GameService {
                 case Right(newState) => newState.players.find(_.id == playerId) match {
                   case Some(player) =>
                     val scores = newState.players.map(player => s"${player.name}: ${player.score.value}")
-                    (newState, ShowBoardAndHandToPlayer(newState.board, player.hand, newState.trumpCard, scores))
+                    (newState, GameStateData(newState.board, player.hand, newState.trumpCard, scores))
                   case None        => (oldState, Error(WrongPlayerId(s"Player with provided playerId: $playerId not found in modified game state list of players")))
                 }
                 case Left(gameError) =>  (oldState, Error(gameError))
@@ -236,9 +236,9 @@ object GameService {
                     val isEmptyHands = playerCardsLeft.contains(0)
                     val gameScores = newState.players.map(player => s"${player.name}: ${player.score.value}")
                     val continueRound =
-                    (newState, ShowBoardAndHandToPlayer(newState.board, player.hand, newState.trumpCard, gameScores))
+                    (newState, GameStateData(newState.board, player.hand, newState.trumpCard, gameScores))
                     val endRound =
-                      (newState, ShowTotalsToPlayer(newState.board, gameScores))
+                      (newState, Totals(newState.board, gameScores))
                       if (isEmptyHands) endRound
                       else continueRound
 
@@ -253,7 +253,6 @@ object GameService {
               val players   = oldState.players
               val hands     = players.map(_ => Hand.Empty)
               val trumpCard = deck.cards.lastOption
-              val eitherOfDeckAndHands = deck.deal(hands).toRight(DealingError("There are no hands to deal cards to."))
               val gameState =
                 for {
                   eitherOfDeckAndHands  <- deck.deal(hands).toRight(DealingError("There are no hands to deal cards to."))
@@ -273,7 +272,7 @@ object GameService {
                 case Right(newState) => newState.players.find(_.id == playerId) match {
                   case Some(player) =>
                     val scores = newState.players.map(player => s"${player.name}: ${player.score.value}")
-                    (newState, ShowBoardAndHandToPlayer(newState.board, player.hand, newState.trumpCard, scores))
+                    (newState, GameStateData(newState.board, player.hand, newState.trumpCard, scores))
                   case None        => (oldState, Error(WrongPlayerId(s"Player with provided playerId: $playerId not found in modified game state list of players")))
                 }
                 case Left(gameError) =>  (oldState, Error(gameError))
@@ -301,7 +300,7 @@ object GameService {
 
               val scores = players.map(player => s"${player.name}: ${player.score.value}")
 
-              (gameState, ShowTotalsToPlayer(board, scores))
+              (gameState, Totals(board, scores))
             })
         }
     }

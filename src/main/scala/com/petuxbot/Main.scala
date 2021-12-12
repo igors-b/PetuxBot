@@ -13,7 +13,6 @@ object Main extends IOApp {
       gameService  <- GameService.of[IO]
       shuffler     =  ShuffleService[IO]
       deckService  =  DeckService(shuffler)
-      errorWrapper =  ResponseErrorWrapper[IO]
       result       <- Stream
         .resource(TelegramClient.global[IO](Token))
         .flatMap { implicit client =>

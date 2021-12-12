@@ -41,22 +41,22 @@ object BotService {
           }
         } yield ()
 
-      private def showStatsToPlayer(chat: Chat, showBoardAndHandToPlayer: ShowBoardAndHandToPlayer): Scenario[F, TextMessage] = {
+      private def showGameDataToPlayer(chat: Chat, gameData: GameStateData): Scenario[F, TextMessage] = {
         Scenario.eval(chat.send("Board is:")) >>
-          Scenario.eval(chat.send(showBoardAndHandToPlayer.board.asJson.spaces2)) >>
+          Scenario.eval(chat.send(gameData.board.asJson.spaces2)) >>
           Scenario.eval(chat.send(s"Your cards:")) >>
-          Scenario.eval(chat.send(showBoardAndHandToPlayer.hand.asJson.spaces2)) >>
+          Scenario.eval(chat.send(gameData.hand.asJson.spaces2)) >>
           Scenario.eval(chat.send("Trump card is:")) >>
-          Scenario.eval(chat.send(showBoardAndHandToPlayer.trumpCard.asJson.spaces2)) >>
+          Scenario.eval(chat.send(gameData.trumpCard.asJson.spaces2)) >>
           Scenario.eval(chat.send("Game score:")) >>
-          Scenario.eval(chat.send(showBoardAndHandToPlayer.scores.asJson.spaces2))
+          Scenario.eval(chat.send(gameData.scores.asJson.spaces2))
       }
 
-      private def showTotalsToPlayer(chat: Chat, showTotalsToPlayer: ShowTotalsToPlayer): Scenario[F, TextMessage] = {
+      private def showTotalsToPlayer(chat: Chat, totals: Totals): Scenario[F, TextMessage] = {
         Scenario.eval(chat.send("Board is:")) >>
-          Scenario.eval(chat.send(showTotalsToPlayer.board.asJson.spaces2)) >>
+          Scenario.eval(chat.send(totals.board.asJson.spaces2)) >>
           Scenario.eval(chat.send("Game score:")) >>
-          Scenario.eval(chat.send(showTotalsToPlayer.scores.asJson.spaces2))
+          Scenario.eval(chat.send(totals.scores.asJson.spaces2))
       }
 
       private def start(chat: Chat): Scenario[F, Unit] =
@@ -76,9 +76,9 @@ object BotService {
 
           _ <- response match {
 
-            case s: ShowBoardAndHandToPlayer =>
+            case gameData: GameStateData =>
               Scenario.eval(chat.send(s"Round started")) >>
-                showStatsToPlayer(chat, s) >>
+                showGameDataToPlayer(chat, gameData) >>
                 changeCards(chat)
 
             case Error(_) =>
@@ -104,8 +104,8 @@ object BotService {
           }
           _ <- response match {
 
-            case s: ShowBoardAndHandToPlayer =>
-              showStatsToPlayer(chat, s) >>
+            case gameData: GameStateData =>
+              showGameDataToPlayer(chat, gameData) >>
                 defineWhoseTurn(chat)
 
             case Error(_) =>
@@ -147,8 +147,8 @@ object BotService {
           }
           _            <- response match {
 
-            case s: ShowBoardAndHandToPlayer =>
-              showStatsToPlayer(chat, s) >>
+            case gameData: GameStateData =>
+              showGameDataToPlayer(chat, gameData) >>
                 botMakesAttack(chat)
 
             case Error(_) =>
@@ -174,12 +174,12 @@ object BotService {
           }
           _            <- response match {
 
-            case s: ShowBoardAndHandToPlayer =>
-              showStatsToPlayer(chat, s) >>
+            case gameData: GameStateData =>
+              showGameDataToPlayer(chat, gameData) >>
                 defineWhoseTurn(chat)
 
-            case s: ShowTotalsToPlayer =>
-              showTotalsToPlayer(chat, s)
+            case totals: Totals =>
+              showTotalsToPlayer(chat, totals)
                 resolveRound(chat)
 
             case Error(_) =>
@@ -198,12 +198,12 @@ object BotService {
           response     <- Scenario.eval(gameService.process(BotMakesAttack(playerId)))
           _            <- response match {
 
-            case s: ShowBoardAndHandToPlayer =>
-              showStatsToPlayer(chat, s) >>
+            case gameData: GameStateData =>
+              showGameDataToPlayer(chat, gameData) >>
                 defineWhoseTurn(chat)
 
-            case s: ShowTotalsToPlayer =>
-              showTotalsToPlayer(chat, s) >>
+            case totals: Totals =>
+              showTotalsToPlayer(chat, totals) >>
                 resolveRound(chat)
 
             case Error(_) =>
@@ -221,8 +221,8 @@ object BotService {
           response     <- Scenario.eval(gameService.process(BotMakesTurn(playerId)))
           _            <- response match {
 
-            case s: ShowBoardAndHandToPlayer =>
-              showStatsToPlayer(chat, s) >>
+            case gameData: GameStateData =>
+              showGameDataToPlayer(chat, gameData) >>
                 playerMakesAttack(chat)
 
             case Error(_) =>
@@ -237,7 +237,7 @@ object BotService {
           _         <- Scenario.eval(chat.send("Round ended!"))
           response  <- Scenario.eval(gameService.process(ResolveRound))
           _         <- response match {
-            case ShowTotalsToPlayer(_, scores) =>
+            case Totals(_, scores) =>
               Scenario.eval(chat.send("Game score after round resolvement is :")) >>
                 Scenario.eval(chat.send(scores.asJson.spaces2)) >>
                 start(chat)
