@@ -3,7 +3,6 @@ package com.petuxbot.domain.cardcontainers
 import cats.implicits._
 import com.petuxbot.domain.Card
 
-
 final case class Deck(cards: List[Card]) {
 
   def addCard(card: Card): Deck = addCards(List(card))
