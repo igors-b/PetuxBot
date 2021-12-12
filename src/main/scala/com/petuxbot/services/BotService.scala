@@ -67,11 +67,9 @@ object BotService {
           requestString  <- Scenario.expect(text)
           deck           <- Scenario.eval(createDeck.of)
           response       <- Parser.parse(requestString) match {
-            case Right(request)  => request match {
-              case StartNewRound   => Scenario.eval(gameService.process(StartRound(playerId, deck)))
-              case _               => Scenario.eval(Error(WrongRequest).pure)
-            }
-            case Left(error) => Scenario.eval(Error(ParsingError(error.getMessage)).pure)
+            case Right(StartNewRound)  => Scenario.eval(gameService.process(StartRound(playerId, deck)))
+            case Right(_)              => Scenario.eval(Error(WrongRequest).pure)
+            case Left(error)           => Scenario.eval(Error(ParsingError(error.getMessage)).pure)
           }
 
           _ <- response match {
@@ -96,11 +94,9 @@ object BotService {
           playerId       =   detailedChat.id
           requestString  <-  Scenario.expect(text)
           response       <-   Parser.parse(requestString) match {
-            case Right(request)  => request match {
-              case ChangeCards(cards) => Scenario.eval(gameService.process(ChangeCardsForPlayer(playerId, cards)))
-              case _                  => Scenario.eval(Error(WrongRequest).pure)
-            }
-            case Left(error) => Scenario.eval(Error(ParsingError(error.getMessage)).pure)
+            case Right(ChangeCards(cards))  => Scenario.eval(gameService.process(ChangeCardsForPlayer(playerId, cards)))
+            case Right(_)                   => Scenario.eval(Error(WrongRequest).pure)
+            case Left(error)                => Scenario.eval(Error(ParsingError(error.getMessage)).pure)
           }
           _ <- response match {
 
@@ -139,11 +135,9 @@ object BotService {
           playerId       =   detailedChat.id
           requestString  <-  Scenario.expect(text)
           response       <-  Parser.parse(requestString) match {
-            case Right(request) => request match {
-              case MakeTurnWithCard(card) => Scenario.eval(gameService.process(PlayerMakesTurn(playerId, card)))
-              case _                      => Scenario.eval(Error(WrongRequest).pure)
-            }
-            case Left(error) => Scenario.eval(Error(ParsingError(error.getMessage)).pure)
+            case Right(MakeTurnWithCard(card)) => Scenario.eval(gameService.process(PlayerMakesTurn(playerId, card)))
+            case Right(_)                      => Scenario.eval(Error(WrongRequest).pure)
+            case Left(error)                   => Scenario.eval(Error(ParsingError(error.getMessage)).pure)
           }
           _            <- response match {
 
@@ -166,11 +160,9 @@ object BotService {
           playerId       =   detailedChat.id
           requestString  <-  Scenario.expect(text)
           response       <-  Parser.parse(requestString) match {
-            case Right(request) => request match {
-              case MakeTurnWithCard(card) => Scenario.eval(gameService.process(PlayerMakesAttack(playerId, card)))
-              case _                      => Scenario.eval(Error(WrongRequest).pure)
-            }
-            case Left(error) => Scenario.eval(Error(ParsingError(error.getMessage)).pure)
+            case Right(MakeTurnWithCard(card)) => Scenario.eval(gameService.process(PlayerMakesAttack(playerId, card)))
+            case Right(_)                      => Scenario.eval(Error(WrongRequest).pure)
+            case Left(error)                   => Scenario.eval(Error(ParsingError(error.getMessage)).pure)
           }
           _            <- response match {
 
