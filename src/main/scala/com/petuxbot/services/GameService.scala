@@ -31,8 +31,8 @@ object GameService {
         command match {
 
           case AddPlayers(playersToAdd) =>
-            state.modify(state => {
-              val newState = state.copy(players = state.players ++ playersToAdd)
+            state.modify(_ => {
+              val newState = GameState(players = playersToAdd)
               (newState, OK)
             })
 
@@ -74,12 +74,17 @@ object GameService {
 
                   case Some(player) =>
                     val playerCardsLeft = newState.players.map(_.cards.size)
+                    val isGameOver = newState.players.map(_.score.value).exists(_ <= 0)
                     val isEmptyHands    = playerCardsLeft.contains(0)
                     val gameScores      = newState.players.map(player => s"${player.name}: ${player.score.value}")
                     val continueRound   =
                       (newState, GameStateData(newState.board, player.hand, newState.trumpCard, gameScores))
-                    val endRound        = (newState, Totals(newState.board, gameScores))
-                    if (isEmptyHands) endRound
+                    val gameOver =
+                      (newState, GameOver(newState.board, gameScores))
+                    val endRound =
+                      (newState, Totals(newState.board, gameScores))
+                    if (isGameOver) gameOver
+                    else if (isEmptyHands) endRound
                     else continueRound
                   case None         => (oldState, Error(WrongPlayerId(s"Player with provided playerId: $playerId not found in modified game state list of players")))
                 }
@@ -225,7 +230,7 @@ object GameService {
                 board       = newBoard,
                 discardPile = oldState.discardPile,
                 trumpCard   = oldState.trumpCard,
-                whoseTurn   = players.find(_.id == winnerWithAddedTricks.id),
+                whoseTurn   = Some(winnerWithAddedTricks),
                 players     = newPlayers
               )
 
@@ -233,14 +238,19 @@ object GameService {
                 case Right(newState) => newState.players.find(_.id == playerId) match {
                   case Some(player) =>
                     val playerCardsLeft = newState.players.map(_.cards.size)
+                    val isGameOver = newState.players.map(_.score.value).exists(_ <= 0)
                     val isEmptyHands = playerCardsLeft.contains(0)
                     val gameScores = newState.players.map(player => s"${player.name}: ${player.score.value}")
                     val continueRound =
                     (newState, GameStateData(newState.board, player.hand, newState.trumpCard, gameScores))
                     val endRound =
                       (newState, Totals(newState.board, gameScores))
-                      if (isEmptyHands) endRound
-                      else continueRound
+                    val gameOver = {
+                      (newState, GameOver(newState.board, gameScores ))
+                    }
+                    if (isGameOver) gameOver
+                    else if (isEmptyHands) endRound
+                    else continueRound
 
                   case None        => (oldState, Error(WrongPlayerId(s"Player with provided playerId: $playerId not found in modified game state list of players")))
                 }
@@ -295,7 +305,7 @@ object GameService {
                 discardPile = oldState.discardPile,
                 trumpCard   = trumpCard,
                 whoseTurn   = None,
-                players     = players
+                players     = players.map(_.copy(tricks = List.empty))
               )
 
               val scores = players.map(player => s"${player.name}: ${player.score.value}")

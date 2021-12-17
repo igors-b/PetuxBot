@@ -6,11 +6,11 @@ scalaVersion := "2.13.3"
 
 val canoeVersion = "0.5.1"
 val catsVersion = "2.3.0"
-val enumeratumVersion = "1.7.0"
+val scalaTestVersion = "3.2.10"
 
 
 libraryDependencies ++= Seq(
   "org.augustjune" %% "canoe"      % canoeVersion,
-  "com.beachape"   %% "enumeratum" % enumeratumVersion,
+  "org.scalatest"  %% "scalatest"  % scalaTestVersion % Test,
   "org.typelevel"  %% "cats-core"  % catsVersion
   )

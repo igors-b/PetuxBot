@@ -9,7 +9,7 @@ import com.petuxbot.BotData.BotId
 import com.petuxbot.Request._
 import com.petuxbot.game.GameError.{ParsingError, WrongRequest}
 import com.petuxbot.Codecs._
-import com.petuxbot.Parser
+import com.petuxbot.{Parser, Request, Response}
 import com.petuxbot.Command._
 import com.petuxbot.Response._
 import com.petuxbot.domain.cardcontainers._
@@ -41,6 +41,12 @@ object BotService {
           }
         } yield ()
 
+      private def getResponse(requestString: String)(pf: PartialFunction[Request, Scenario[F, Response]]): Scenario[F, Response] =
+        Parser.parse(requestString).fold(
+          error   => Scenario.pure(Error(ParsingError(error.getMessage))),
+          request => pf(request) orElse Scenario.pure(Error(WrongRequest))
+        )
+
       private def showGameDataToPlayer(chat: Chat, gameData: GameStateData): Scenario[F, TextMessage] = {
         Scenario.eval(chat.send("Board is:")) >>
           Scenario.eval(chat.send(gameData.board.asJson.spaces2)) >>
@@ -59,19 +65,24 @@ object BotService {
           Scenario.eval(chat.send(totals.scores.asJson.spaces2))
       }
 
+      private def showGameResult(chat: Chat, gameOver: GameOver): Scenario[F, TextMessage] = {
+        Scenario.eval(chat.send("Board is:")) >>
+          Scenario.eval(chat.send(gameOver.board.asJson.spaces2)) >>
+          Scenario.eval(chat.send("Game score:")) >>
+          Scenario.eval(chat.send(gameOver.scores.asJson.spaces2)) >>
+          Scenario.eval(chat.send("GAME IS OVER:"))
+      }
+
       private def start(chat: Chat): Scenario[F, Unit] =
         for {
-          _              <- Scenario.eval(chat.send("Type Deal to start new round:"))
+          _              <- Scenario.eval(chat.send("Type \"deal\" to start new round:"))
           detailedChat   <- Scenario.eval(chat.details)
           playerId       =  detailedChat.id
           requestString  <- Scenario.expect(text)
           deck           <- Scenario.eval(createDeck.of)
-          response       <- Parser.parse(requestString) match {
-            case Right(StartNewRound)  => Scenario.eval(gameService.process(StartRound(playerId, deck)))
-            case Right(_)              => Scenario.eval(Error(WrongRequest).pure)
-            case Left(error)           => Scenario.eval(Error(ParsingError(error.getMessage)).pure)
+          response       <- getResponse(requestString) {
+            case StartNewRound => Scenario.eval(gameService.process(StartRound(playerId, deck)))
           }
-
           _ <- response match {
 
             case gameData: GameStateData =>
@@ -93,10 +104,8 @@ object BotService {
           detailedChat   <-  Scenario.eval(chat.details)
           playerId       =   detailedChat.id
           requestString  <-  Scenario.expect(text)
-          response       <-   Parser.parse(requestString) match {
-            case Right(ChangeCards(cards))  => Scenario.eval(gameService.process(ChangeCardsForPlayer(playerId, cards)))
-            case Right(_)                   => Scenario.eval(Error(WrongRequest).pure)
-            case Left(error)                => Scenario.eval(Error(ParsingError(error.getMessage)).pure)
+          response       <- getResponse(requestString) {
+            case ChangeCards(cards) => Scenario.eval(gameService.process(ChangeCardsForPlayer(playerId, cards)))
           }
           _ <- response match {
 
@@ -134,12 +143,10 @@ object BotService {
           detailedChat   <-  Scenario.eval(chat.details)
           playerId       =   detailedChat.id
           requestString  <-  Scenario.expect(text)
-          response       <-  Parser.parse(requestString) match {
-            case Right(MakeTurnWithCard(card)) => Scenario.eval(gameService.process(PlayerMakesTurn(playerId, card)))
-            case Right(_)                      => Scenario.eval(Error(WrongRequest).pure)
-            case Left(error)                   => Scenario.eval(Error(ParsingError(error.getMessage)).pure)
+          response       <- getResponse(requestString) {
+            case MakeTurnWithCard(card) => Scenario.eval(gameService.process(PlayerMakesTurn(playerId, card)))
           }
-          _            <- response match {
+          _  <- response match {
 
             case gameData: GameStateData =>
               showGameDataToPlayer(chat, gameData) >>
@@ -159,20 +166,21 @@ object BotService {
           detailedChat   <-  Scenario.eval(chat.details)
           playerId       =   detailedChat.id
           requestString  <-  Scenario.expect(text)
-          response       <-  Parser.parse(requestString) match {
-            case Right(MakeTurnWithCard(card)) => Scenario.eval(gameService.process(PlayerMakesAttack(playerId, card)))
-            case Right(_)                      => Scenario.eval(Error(WrongRequest).pure)
-            case Left(error)                   => Scenario.eval(Error(ParsingError(error.getMessage)).pure)
+          response       <- getResponse(requestString) {
+            case MakeTurnWithCard(card) => Scenario.eval(gameService.process(PlayerMakesAttack(playerId, card)))
           }
-          _            <- response match {
+
+          _ <- response match {
 
             case gameData: GameStateData =>
               showGameDataToPlayer(chat, gameData) >>
                 defineWhoseTurn(chat)
 
             case totals: Totals =>
-              showTotalsToPlayer(chat, totals)
+              showTotalsToPlayer(chat, totals) >>
                 resolveRound(chat)
+
+            case gameOver: GameOver => showGameResult(chat, gameOver)
 
             case Error(_) =>
               Scenario.eval(chat.send(response.asJson.spaces2)) >>
@@ -197,6 +205,8 @@ object BotService {
             case totals: Totals =>
               showTotalsToPlayer(chat, totals) >>
                 resolveRound(chat)
+
+            case gameOver: GameOver => showGameResult(chat, gameOver)
 
             case Error(_) =>
               Scenario.eval(chat.send(response.asJson.spaces2)) >>

@@ -4,8 +4,10 @@ import com.petuxbot.domain.{Card, Player, Score, StrongestCard}
 
 object CardValidator {
   def isCardValidToMakeTurn(card: Card, player: Player, scores: List[Score]): Boolean =
-    if (player.hasCard(card))
-      scores.exists(_.value <= 3) && card.isTrump || !scores.exists(_.value <= 3)
+    if (player.hasCard(card)) {
+      if (scores.exists(_.value <= 3) && player.hand.cards.exists(_.isTrump)) card.isTrump
+      else true
+    }
     else false
 
   //ToDo Try to refactor this nested hell
@@ -16,41 +18,67 @@ object CardValidator {
   ): Boolean = {
     val cards = player.cards
 
-    val trumpCards = cards.filter(_.isTrump)
+    def trumpCards = cards.filter(_.isTrump)
 
-    val cardsOfRequiredSuit =
+    def cardsOfRequiredSuit =
       cards.filter(_.suit == cardToHit.suit)
 
-    val cardsOfRequiredSuitAndStrongerThanStrongestCard =
+    def cardsOfRequiredSuitAndStrongerThanStrongestCard =
       cardsOfRequiredSuit
         .filter(_.strength > strongestCard.value.strength)
 
+    def trumpCardsStrongerThenStrongestCard =
+      trumpCards.filter(_.strength > strongestCard.value.strength)
+//
+    def cardToHitIsNotTrump =
+      if (player.hasCardOfSuit(cardToHit.suit)) playerHasCardOfSuit
+      else if (trumpCards.nonEmpty) cardToHitIsNotTrumpAndTrumpCardsNonEmpty
+      else true
+
+    def playerHasCardOfSuit =
+      if (strongestCard.value.suit == cardToHit.suit && cardsOfRequiredSuitAndStrongerThanStrongestCard.nonEmpty)
+        cardsOfRequiredSuitAndStrongerThanStrongestCard.contains(card)
+      else cardsOfRequiredSuit.contains(card)
+
+    def cardToHitIsNotTrumpAndTrumpCardsNonEmpty =
+      if (strongestCard.value.isTrump && trumpCardsStrongerThenStrongestCard.nonEmpty)
+        trumpCardsStrongerThenStrongestCard.contains(card)
+      else trumpCards.contains(card)
+
+    def trumpCardsNonEmpty =
+      if (trumpCardsStrongerThenStrongestCard.nonEmpty) trumpCardsStrongerThenStrongestCard.contains(card)
+      else trumpCards.contains(card)
+
     val result =
-      if (player.hasCard(card)) {
-        if (!cardToHit.isTrump) {
-          if (player.hasCardOfSuit(cardToHit.suit)) {
-            if (strongestCard.value.suit == cardToHit.suit) {
-              if (cardsOfRequiredSuitAndStrongerThanStrongestCard.nonEmpty)
-                cardsOfRequiredSuitAndStrongerThanStrongestCard.contains(card)
-              else cardsOfRequiredSuit.contains(card)
-            } else cardsOfRequiredSuit.contains(card)
-          } else if (trumpCards.nonEmpty) {
-            if (strongestCard.value.isTrump) {
-              val trumpCardsStrongerThenStrongestCard =
-                trumpCards.filter(_.strength > strongestCard.value.strength)
-              if (trumpCardsStrongerThenStrongestCard.nonEmpty)
-                trumpCardsStrongerThenStrongestCard.contains(card)
-              else trumpCards.contains(card)
-            } else trumpCards.contains(card)
-          } else true
-        } else if (trumpCards.nonEmpty) {
-          val trumpCardsStrongerThenStrongestCard =
-            trumpCards.filter(_.strength > strongestCard.value.strength)
-          if (trumpCardsStrongerThenStrongestCard.nonEmpty)
-            trumpCardsStrongerThenStrongestCard.contains(card)
-          else trumpCards.contains(card)
-        } else true
-      } else false
+      if (player.hasCard(card))
+        if (!cardToHit.isTrump) cardToHitIsNotTrump
+        else if (trumpCards.nonEmpty) trumpCardsNonEmpty
+        else true
+      else false
+ //
+//    val result =
+//      if (player.hasCard(card)) {
+//        if (!cardToHit.isTrump) {
+//          if (player.hasCardOfSuit(cardToHit.suit)) {
+//            if (strongestCard.value.suit == cardToHit.suit) {
+//              if (cardsOfRequiredSuitAndStrongerThanStrongestCard.nonEmpty)
+//                cardsOfRequiredSuitAndStrongerThanStrongestCard.contains(card)
+//              else cardsOfRequiredSuit.contains(card)
+//            } else cardsOfRequiredSuit.contains(card)
+//          } else if (trumpCards.nonEmpty) {
+//            if (strongestCard.value.isTrump) {
+//
+//              if (trumpCardsStrongerThenStrongestCard.nonEmpty)
+//                trumpCardsStrongerThenStrongestCard.contains(card)
+//              else trumpCards.contains(card)
+//            } else trumpCards.contains(card)
+//          } else true
+//        } else if (trumpCards.nonEmpty) {
+//          if (trumpCardsStrongerThenStrongestCard.nonEmpty)
+//            trumpCardsStrongerThenStrongestCard.contains(card)
+//          else trumpCards.contains(card)
+//        } else true
+//      } else false
 
     result
   }
