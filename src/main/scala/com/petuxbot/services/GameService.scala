@@ -81,7 +81,6 @@ object GameService {
           case BotMakesAttack(playerId) =>
             state.modify(oldState => {
               val players = oldState.players
-              val deck = oldState.deck
               val board = oldState.board
               val botOpt = players.find(_.id == BotId)
               val gameState = for {
@@ -103,7 +102,7 @@ object GameService {
                 newPlayers       =  newOthers :+ winnerWithAddedTricks
 
               } yield GameState(
-                deck        = deck,
+                deck        = oldState.deck,
                 board       = newBoard,
                 discardPile = oldState.discardPile,
                 trumpCard   = oldState.trumpCard,
@@ -118,7 +117,6 @@ object GameService {
           case BotMakesTurn(playerId) =>
             state.modify(oldState => {
               val players = oldState.players
-              val deck = oldState.deck
               val board = Board.Empty
               val botOpt = players.find(_.id == BotId)
               val scores     = players.map(_.score)
@@ -129,7 +127,7 @@ object GameService {
                 updatedBot       =  bot.copy(hand = bot.hand.removeCard(card))
                 updatedPlayers   =  others :+ updatedBot
               } yield GameState(
-                deck = deck,
+                deck = oldState.deck,
                 board = board.addCard(card).setCardToHit(card).setStrongestCard(card, BotId),
                 discardPile = oldState.discardPile,
                 trumpCard = oldState.trumpCard,
@@ -201,7 +199,6 @@ object GameService {
           case PlayerMakesAttack(playerId, card) =>
             state.modify(oldState => {
               val players = oldState.players
-              val deck = oldState.deck
               val board = oldState.board
               val playerOpt = players.find(_.id == playerId)
               val gameState = for {
@@ -224,7 +221,7 @@ object GameService {
                 newPlayers            =  newOthers :+ winnerWithAddedTricks
 
               } yield GameState(
-                deck        = deck,
+                deck        = oldState.deck,
                 board       = newBoard,
                 discardPile = oldState.discardPile,
                 trumpCard   = oldState.trumpCard,
@@ -260,7 +257,7 @@ object GameService {
 
           case ResolveRound =>
             state.modify(oldState => {
-              val players     = oldState.players.map {
+              val players = oldState.players.map {
                 player =>
                 if (player.tricks.isEmpty) player.copy(score = Score(player.score.value + 5))
                 else player
