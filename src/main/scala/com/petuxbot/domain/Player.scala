@@ -4,7 +4,7 @@ import com.petuxbot.domain.cardcontainers.{Hand, Trick}
 
 case class Player(id: Long, name: String, hand: Hand, score: Score, tricks: List[Trick]) {
 
-  val cards: List[Card] = this.hand.cards
+  val cards: List[Card] = hand.cards
 
   def numberOfTricks: Int = tricks.size
 
@@ -17,7 +17,7 @@ case class Player(id: Long, name: String, hand: Hand, score: Score, tricks: List
     else Some(this.copy(hand = hand.removeCards(cardsToRemove)))
   }
 
-  def hasCard(card: Card): Boolean = this.hand.cards.contains(card)
+  def hasCard(card: Card): Boolean = hand.cards.contains(card)
 
-  def hasCardOfSuit(suit: Suit): Boolean = this.hand.cards.map(_.suit).contains(suit)
+  def hasCardOfSuit(suit: Suit): Boolean = hand.cards.map(_.suit).contains(suit)
 }

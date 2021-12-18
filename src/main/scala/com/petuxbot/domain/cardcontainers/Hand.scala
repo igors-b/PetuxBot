@@ -4,11 +4,11 @@ import com.petuxbot.domain.Card
 
 final case class Hand(cards: List[Card]) {
 
-  def addCards(cardsToAdd: List[Card]): Hand = this.copy(cards ++ cardsToAdd)
+  def addCards(cardsToAdd: List[Card]): Hand = copy(cards ++ cardsToAdd)
 
   def removeCard(card: Card): Hand = removeCards(List(card))
 
-  def removeCards(cardsToRemove: List[Card]): Hand = this.copy(cards.diff(cardsToRemove))
+  def removeCards(cardsToRemove: List[Card]): Hand = copy(cards.diff(cardsToRemove))
 }
 
 object  Hand {

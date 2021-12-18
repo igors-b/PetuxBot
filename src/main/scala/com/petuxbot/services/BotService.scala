@@ -9,7 +9,7 @@ import com.petuxbot.BotData.BotId
 import com.petuxbot.Request._
 import com.petuxbot.game.GameError.{ParsingError, WrongRequest}
 import com.petuxbot.Codecs._
-import com.petuxbot.{Parser, Request, Response}
+import com.petuxbot.{Parser, Request, Response, domain}
 import com.petuxbot.Command._
 import com.petuxbot.Response._
 import com.petuxbot.domain.cardcontainers._
@@ -32,7 +32,7 @@ object BotService {
           playerId      =  detailedChat.id
           userFirstName =  detailedChat.firstName.getOrElse("dear Friend")
           _             <- Scenario.eval(chat.send(s"Hello, $userFirstName! Would you like to start PETUX game?"))
-          player        =  Player(playerId, userFirstName, Hand.Empty, Score(15), List.empty[Trick])
+          player        =  domain.Player(playerId, userFirstName, Hand.Empty, Score(15), List.empty[Trick])
           dealer        =  Player(BotId, "Bot", Hand.Empty, Score(15), List.empty[Trick])
           response      <- Scenario.eval(gameService.process(AddPlayers(List(player, dealer))))
           _             <- response match {

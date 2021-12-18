@@ -13,7 +13,7 @@ final case class Deck(cards: List[Card]) {
             val (taken, rest) = cards.splitAt(Hand.InitialNumberOfCards - hand.cards.size)
             (hands :+ hand.addCards(taken), rest)
         } match {
-          case (hands, cards) => (this.copy(cards = cards), hands).some
+          case (hands, cards) => (copy(cards = cards), hands).some
         }
       } else (this, hands).some
     } else None

@@ -291,26 +291,23 @@ object GameService {
 
           case ResolveRound =>
             state.modify(oldState => {
-              val deck        = oldState.deck
-              val board       = Board.Empty
-              val trumpCard   = oldState.trumpCard
               val players     = oldState.players.map {
                 player =>
                 if (player.tricks.isEmpty) player.copy(score = Score(player.score.value + 5))
                 else player
               }
               val gameState = GameState(
-                deck        = deck,
-                board       = board,
+                deck        = oldState.deck,
+                board       = Board.Empty,
                 discardPile = oldState.discardPile,
-                trumpCard   = trumpCard,
+                trumpCard   = oldState.trumpCard,
                 whoseTurn   = None,
                 players     = players.map(_.copy(tricks = List.empty))
               )
 
               val scores = players.map(player => s"${player.name}: ${player.score.value}")
 
-              (gameState, Totals(board, scores))
+              (gameState, Totals(gameState.board, scores))
             })
         }
     }

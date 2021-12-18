@@ -6,7 +6,7 @@ sealed trait Suit
 
 object Suit {
 
-  lazy val Suits = NonEmptyList(Clubs, List(Diamonds, Hearts, Spades))
+  lazy val Suits: NonEmptyList[Suit] = NonEmptyList(Clubs, List(Diamonds, Hearts, Spades))
 
   case object Clubs extends Suit {
     override def toString: String = "c"
