@@ -82,6 +82,7 @@ object BotService {
           deck           <- Scenario.eval(createDeck.of)
           response       <- getResponse(requestString) {
             case StartNewRound => Scenario.eval(gameService.process(StartRound(playerId, deck)))
+            case _             => Scenario.raiseError(new Exception(""))
           }
           _ <- response match {
 
@@ -104,8 +105,9 @@ object BotService {
           detailedChat   <-  Scenario.eval(chat.details)
           playerId       =   detailedChat.id
           requestString  <-  Scenario.expect(text)
-          response       <- getResponse(requestString) {
+          response       <-  getResponse(requestString) {
             case ChangeCards(cards) => Scenario.eval(gameService.process(ChangeCardsForPlayer(playerId, cards)))
+            case _                  => Scenario.raiseError(new Exception(""))
           }
           _ <- response match {
 
@@ -143,8 +145,9 @@ object BotService {
           detailedChat   <-  Scenario.eval(chat.details)
           playerId       =   detailedChat.id
           requestString  <-  Scenario.expect(text)
-          response       <- getResponse(requestString) {
+          response       <-  getResponse(requestString) {
             case MakeTurnWithCard(card) => Scenario.eval(gameService.process(PlayerMakesTurn(playerId, card)))
+            case _                      => Scenario.raiseError(new Exception(""))
           }
           _  <- response match {
 
@@ -166,8 +169,9 @@ object BotService {
           detailedChat   <-  Scenario.eval(chat.details)
           playerId       =   detailedChat.id
           requestString  <-  Scenario.expect(text)
-          response       <- getResponse(requestString) {
+          response       <-  getResponse(requestString) {
             case MakeTurnWithCard(card) => Scenario.eval(gameService.process(PlayerMakesAttack(playerId, card)))
+            case _                      => Scenario.raiseError(new Exception(""))
           }
 
           _ <- response match {
