@@ -7,7 +7,7 @@ import com.petuxbot.domain.cardcontainers.{Deck, Hand}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-class DeckSpec extends AnyFlatSpec with Matchers{
+class DeckSpec extends AnyFlatSpec with Matchers {
   val emptyHands: List[Hand] = List.empty[Hand]
   val hands: List[Hand] = List(
     Hand.Empty,
