@@ -4,7 +4,6 @@ import canoe.api._
 import canoe.models.Chat
 import canoe.models.messages.TextMessage
 import canoe.syntax._
-import cats.Applicative
 import com.petuxbot.BotData.BotId
 import com.petuxbot.Request._
 import com.petuxbot.game.GameError.{ParsingError, WrongRequest}
@@ -23,7 +22,7 @@ trait BotService[F[_]] {
 
 object BotService {
 
-  def apply[F[_]: TelegramClient: Applicative](gameService: GameService[F], createDeck: DeckService[F]): BotService[F] =
+  def apply[F[_]: TelegramClient](gameService: GameService[F], createDeck: DeckService[F]): BotService[F] =
     new BotService[F] {
       def greetings: Scenario[F, Unit] =
         for {
