@@ -10,7 +10,6 @@ object CardValidator {
     }
     else false
 
-  //ToDo Try to refactor this nested hell
   def isCardValidToMakeAttack(
     card: Card,
     player: Player, strongestCard: StrongestCard,
@@ -32,7 +31,8 @@ object CardValidator {
 //
     def cardToHitIsNotTrump =
       if (player.hasCardOfSuit(cardToHit.suit)) playerHasCardOfSuit
-      else if (trumpCards.nonEmpty) cardToHitIsNotTrumpAndTrumpCardsNonEmpty
+      else if (trumpCards.nonEmpty) {
+        cardToHitIsNotTrumpAndTrumpCardsNonEmpty}
       else true
 
     def playerHasCardOfSuit =
@@ -55,30 +55,6 @@ object CardValidator {
         else if (trumpCards.nonEmpty) trumpCardsNonEmpty
         else true
       else false
- //
-//    val result =
-//      if (player.hasCard(card)) {
-//        if (!cardToHit.isTrump) {
-//          if (player.hasCardOfSuit(cardToHit.suit)) {
-//            if (strongestCard.value.suit == cardToHit.suit) {
-//              if (cardsOfRequiredSuitAndStrongerThanStrongestCard.nonEmpty)
-//                cardsOfRequiredSuitAndStrongerThanStrongestCard.contains(card)
-//              else cardsOfRequiredSuit.contains(card)
-//            } else cardsOfRequiredSuit.contains(card)
-//          } else if (trumpCards.nonEmpty) {
-//            if (strongestCard.value.isTrump) {
-//
-//              if (trumpCardsStrongerThenStrongestCard.nonEmpty)
-//                trumpCardsStrongerThenStrongestCard.contains(card)
-//              else trumpCards.contains(card)
-//            } else trumpCards.contains(card)
-//          } else true
-//        } else if (trumpCards.nonEmpty) {
-//          if (trumpCardsStrongerThenStrongestCard.nonEmpty)
-//            trumpCardsStrongerThenStrongestCard.contains(card)
-//          else trumpCards.contains(card)
-//        } else true
-//      } else false
 
     result
   }
