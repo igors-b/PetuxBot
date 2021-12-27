@@ -31,11 +31,9 @@ by adding them to his points
 
 ## Run
 
-
 Start scala backend:
 
 ```shell
-cd server
 sbt run
 ```
 
