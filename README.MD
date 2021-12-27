@@ -4,15 +4,15 @@ Course project for [Evolution Bootcamp[Scala] - 2021](https://github.com/evoluti
 
 ## Description
 
-PetuxBot is a Telegram bot application written in Scala which represents a card game Petux.
+`PetuxBot` is a Telegram bot application written in Scala which represents a card game Petux.
 Where a Telegram user plays Petux game with a bot in single player mode. 
 
 ## Petux card game rules
 
-* Number of decks: 1
-* Number of cards in deck: 20 - 36 (depending on number of players)
-* Number of players: 2 - 5
-* Number of cards in player’s hand: 5
+* `Number of decks:` 1
+* `Number of cards in deck:` 20 - 36 (depending on number of players)
+* `Number of players:` 2 - 5
+* `Number of cards in player’s hand:` 5
 * The main goal of the game: to write off 15 points first
 * At the beginning of the game each player has 15 points of score
 * Each point writes off by each trick taken during the round

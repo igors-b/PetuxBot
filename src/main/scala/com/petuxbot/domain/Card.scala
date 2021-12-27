@@ -12,6 +12,4 @@ final case class Card(rank: Rank, suit: Suit, isTrump: Boolean = false) {
       case Jack  => 11
       case Ten   => 10
     }
-
-  override def toString: String = rank.toString + suit.toString
 }
