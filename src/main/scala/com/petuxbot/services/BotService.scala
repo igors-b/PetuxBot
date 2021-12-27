@@ -51,8 +51,6 @@ object BotService {
       private def showGameDataToPlayer(chat: Chat, gameData: GameStateData): Scenario[F, TextMessage] = {
         Scenario.eval(chat.send("Board is:")) >>
           Scenario.eval(chat.send(gameData.board.asJson.spaces2)) >>
-//          Scenario.eval(chat.send(s"Your cards:")) >>
-//          Scenario.eval(chat.send(gameData.hand.asJson.spaces2)) >>
           Scenario.eval(chat.send("Trump card is:")) >>
           Scenario.eval(chat.send(gameData.trumpCard.asJson.spaces2)) >>
           Scenario.eval(chat.send("Game score:")) >>
