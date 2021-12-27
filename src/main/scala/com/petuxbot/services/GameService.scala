@@ -48,7 +48,7 @@ object GameService {
               val gameOver        =
                 (newState, GameOver(newState.board, gameScores))
               val endRound        =
-                (newState, Totals(newState.board, gameScores))
+                (newState, EndRound(newState.board, gameScores))
               if (isGameOver) gameOver
               else if (isEmptyHands) endRound
               else continueRound
@@ -274,7 +274,7 @@ object GameService {
 
               val scores = players.map(player => s"${player.name}: ${player.score.value}")
 
-              (gameState, Totals(gameState.board, scores))
+              (gameState, EndRound(gameState.board, scores))
             })
         }
     }

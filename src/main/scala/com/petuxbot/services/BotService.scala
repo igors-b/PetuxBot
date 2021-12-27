@@ -80,11 +80,11 @@ object BotService {
           showScoreToPlayer(chat, gameStateData)
       }
 
-      private def showTotalsToPlayer(chat: Chat, totals: Totals): Scenario[F, TextMessage] = {
+      private def showTotalsToPlayer(chat: Chat, endRound: EndRound): Scenario[F, TextMessage] = {
         Scenario.eval(chat.send("Board is:")) >>
-          Scenario.eval(chat.send(totals.board.asJson.spaces2)) >>
+          Scenario.eval(chat.send(endRound.board.asJson.spaces2)) >>
           Scenario.eval(chat.send("Game score:")) >>
-          Scenario.eval(chat.send(totals.scores.asJson.spaces2))
+          Scenario.eval(chat.send(endRound.scores.asJson.spaces2))
       }
 
       private def showGameResult(chat: Chat, gameOver: GameOver): Scenario[F, TextMessage] = {
@@ -215,8 +215,8 @@ object BotService {
               showBoardAndScoreToPlayer(chat, gameData) >>
                 defineWhoseTurn(chat, gameService, gameData)
 
-            case totals: Totals =>
-              showTotalsToPlayer(chat, totals) >>
+            case endRound: EndRound =>
+              showTotalsToPlayer(chat, endRound) >>
                 resolveRound(chat, gameService)
 
             case gameOver: GameOver => showGameResult(chat, gameOver)
@@ -242,8 +242,8 @@ object BotService {
               showBoardAndScoreToPlayer(chat, gameData) >>
                 defineWhoseTurn(chat, gameService, gameData)
 
-            case totals: Totals =>
-              showTotalsToPlayer(chat, totals) >>
+            case endRound: EndRound =>
+              showTotalsToPlayer(chat, endRound) >>
                 resolveRound(chat, gameService)
 
             case gameOver: GameOver => showGameResult(chat, gameOver)
@@ -279,7 +279,7 @@ object BotService {
           _         <- Scenario.eval(chat.send("Round ended!"))
           response  <- Scenario.eval(gameService.process(ResolveRound))
           _         <- response match {
-            case Totals(_, scores) =>
+            case EndRound(_, scores) =>
               Scenario.eval(chat.send("Game score after round resolvement is :")) >>
                 Scenario.eval(chat.send(scores.asJson.spaces2)) >>
                 start(chat, gameService)
