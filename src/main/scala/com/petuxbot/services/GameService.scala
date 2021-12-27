@@ -44,7 +44,7 @@ object GameService {
               val isEmptyHands    = playerCardsLeft.count(_ == 0) == newState.players.size
               val gameScores      = newState.players.map(player => s"${player.name}: ${player.score.value}")
               val continueRound   =
-                (newState, GameStateData(newState.board, player.hand, newState.trumpCard, gameScores))
+                (newState, ContinueRound(newState.board, player.hand, newState.trumpCard, gameScores))
               val gameOver        =
                 (newState, GameOver(newState.board, gameScores))
               val endRound        =
@@ -54,22 +54,6 @@ object GameService {
               else continueRound
           }
         }
-
-//      private def resolveRequest(
-//                          oldState: GameState,
-//                          newState: Either[GameError, GameState],
-//                          playerId: Long
-//                        ): (GameState, Response) =
-//        newState match {
-//          case Left(gameError) =>  (oldState, Error(gameError))
-//          case Right(newState) =>  newState.players.find(_.id == playerId) match {
-//            case Some(player) =>
-//              val scores = newState.players.map(player => s"${player.name}: ${player.score.value}")
-//              (newState, GameStateData(newState.board, player.hand, newState.trumpCard, scores))
-//            case None =>
-//              (oldState, Error(WrongPlayerId(s"Player with provided playerId: $playerId not found in modified game state list of players")))
-//          }
-//        }
 
       def process(command: Command): F[Response] =
         command match {

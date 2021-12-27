@@ -6,7 +6,7 @@ sealed trait Response
 
 object Response {
   case object OK extends Response
-  final case class GameStateData(board: Board, hand: Hand, trumpCard: Option[Card], scores: List[String]) extends Response
+  final case class ContinueRound(board: Board, hand: Hand, trumpCard: Option[Card], scores: List[String]) extends Response
   final case class GameOver(board: Board, scores: List[String]) extends Response
   final case class EndRound(board: Board, scores: List[String]) extends Response
   final case class WhoseTurn(playerId: Long) extends Response
