@@ -9,11 +9,11 @@ Where a Telegram user plays Petux game with a bot in single player mode.
 
 ## Petux card game rules
 
-* **Number of decks:** 1
-* **Number of cards in deck:** 20 - 36 (depending on number of players)
-* **Number of players:** 2 - 5
-* **Number of cards in player’s hand:** 5
-* The **main goal** of the game: to write off 15 points first
+* `Number of decks:` 1
+* `Number of cards in deck:` 20 - 36 (depending on number of players)
+* `Number of players:` 2 - 5
+* `Number of cards in player’s hand:` 5
+* The main goal of the game: to write off 15 points first
 * At the beginning of the game each player has 15 points of score
 * Each point writes off by each trick taken during the round
 * At the beginning of each game round each player is dealt five cards, 
