@@ -37,6 +37,8 @@ object Codecs {
 
   implicit val responseCodec: Codec[Response] = deriveCodec[Response]
 
+  implicit val makeTurnWithCard: Codec[MakeTurnWithCard] = deriveCodec[MakeTurnWithCard]
+
   implicit val commandEncoder: Encoder[Request] = Encoder.instance {
     case StartNewRound            => Encoder.encodeString("deal")
     case cc @ ChangeCards(_)      => cc.asJson

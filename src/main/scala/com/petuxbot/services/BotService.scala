@@ -51,6 +51,15 @@ object BotService {
       private def showGameDataToPlayer(chat: Chat, gameData: GameStateData): Scenario[F, TextMessage] = {
         Scenario.eval(chat.send("Board is:")) >>
           Scenario.eval(chat.send(gameData.board.asJson.spaces2)) >>
+//          Scenario.eval(chat.send(s"Your cards:")) >>
+//          Scenario.eval(chat.send(gameData.hand.asJson.spaces2)) >>
+          Scenario.eval(chat.send("Trump card is:")) >>
+          Scenario.eval(chat.send(gameData.trumpCard.asJson.spaces2)) >>
+          Scenario.eval(chat.send("Game score:")) >>
+          Scenario.eval(chat.send(gameData.scores.asJson.spaces2))
+      }
+
+      private def showCardsToPlayer(chat: Chat, gameData: GameStateData): Scenario[F, TextMessage] = {
           Scenario.eval(chat.send(s"Your cards:")) >>
           Scenario.eval(chat.send(gameData.hand.asJson.spaces2)) >>
           Scenario.eval(chat.send("Trump card is:")) >>
@@ -67,16 +76,18 @@ object BotService {
       }
 
       private def showGameResult(chat: Chat, gameOver: GameOver): Scenario[F, TextMessage] = {
+        val keyboard = KeyboardService.create("/start")
         Scenario.eval(chat.send("Board is:")) >>
           Scenario.eval(chat.send(gameOver.board.asJson.spaces2)) >>
           Scenario.eval(chat.send("Game score:")) >>
           Scenario.eval(chat.send(gameOver.scores.asJson.spaces2)) >>
-          Scenario.eval(chat.send("GAME IS OVER:"))
+          Scenario.eval(chat.send("GAME IS OVER!", keyboard = keyboard))
       }
 
-      private def start(chat: Chat, gameService: GameService[F]): Scenario[F, Unit] =
+      private def start(chat: Chat, gameService: GameService[F]): Scenario[F, Unit] = {
+        val keyboard = KeyboardService.create("\"deal\"")
         for {
-          _              <- Scenario.eval(chat.send("Type \"deal\" to start new round:"))
+          _              <- Scenario.eval(chat.send("Type \"deal\" to start new round:", keyboard = keyboard))
           detailedChat   <- Scenario.eval(chat.details)
           playerId       =  detailedChat.id
           requestString  <- Scenario.expect(text)
@@ -89,7 +100,7 @@ object BotService {
 
             case gameData: GameStateData =>
               Scenario.eval(chat.send(s"Round started")) >>
-                showGameDataToPlayer(chat, gameData) >>
+                showCardsToPlayer(chat, gameData) >>
                 changeCards(chat, gameService)
 
             case Error(_) =>
@@ -98,11 +109,15 @@ object BotService {
             case _ => Scenario.eval(chat.send("Wrong response from server"))
           }
         } yield ()
+      }
 
-      private def changeCards(chat: Chat, gameService: GameService[F]): Scenario[F, Unit] =
+
+      private def changeCards(chat: Chat, gameService: GameService[F]): Scenario[F, Unit] = {
+        val keyboard = KeyboardService.create("{\"cards\":[]}")
         for {
           _              <-  Scenario.eval(chat.send(s"Would you like to change some cards?"))
-          _              <-  Scenario.eval(chat.send(s"Send me the list of cards you would like to change"))
+          _              <-  Scenario.eval(chat.send(s"Send me the list of cards you would like to change",
+                                           keyboard = keyboard))
           detailedChat   <-  Scenario.eval(chat.details)
           playerId       =   detailedChat.id
           requestString  <-  Scenario.expect(text)
@@ -113,8 +128,7 @@ object BotService {
           _ <- response match {
 
             case gameData: GameStateData =>
-              showGameDataToPlayer(chat, gameData) >>
-                defineWhoseTurn(chat, gameService)
+                defineWhoseTurn(chat, gameService, gameData)
 
             case Error(_) =>
               Scenario.eval(chat.send(response.asJson.spaces2)) >>
@@ -122,9 +136,10 @@ object BotService {
             case _ => Scenario.eval(chat.send("Wrong response from server"))
           }
         } yield ()
+      }
 
 
-      private def defineWhoseTurn(chat: Chat, gameService: GameService[F]): Scenario[F, Unit] =
+      private def defineWhoseTurn(chat: Chat, gameService: GameService[F], gameData: GameStateData): Scenario[F, Unit] =
         for {
           _            <- Scenario.eval(chat.send(s"Requesting playerID whose turn"))
           detailedChat <- Scenario.eval(chat.details)
@@ -132,7 +147,7 @@ object BotService {
           response     <- Scenario.eval(gameService.process(GetPlayerIdWhoseTurn))
           _            <- response match {
             case WhoseTurn(playerId) =>
-              if (playerId == id) playerMakesTurn(chat, gameService)
+              if (playerId == id) playerMakesTurn(chat, gameService, gameData)
               else botMakesTurn(chat, gameService)
             case Error(_) => Scenario.eval(chat.send(response.asJson.spaces2))
             case _        => Scenario.eval(chat.send("Wrong response from server"))
@@ -140,9 +155,13 @@ object BotService {
         } yield ()
 
 
-      private def playerMakesTurn(chat: Chat, gameService: GameService[F]): Scenario[F, Unit] =
+      private def playerMakesTurn(chat: Chat, gameService: GameService[F], gameStateData: GameStateData): Scenario[F, Unit] = {
+        val buttons = gameStateData.hand.cards.map(card => MakeTurnWithCard(card).asJson.noSpaces)
+        val keyboard = KeyboardService.createFromList(buttons)
         for {
-          _              <-  Scenario.eval(chat.send("Now it is Your turn. Put card on the Board"))
+          _              <-  Scenario.eval(chat.send("Now it is Your turn. Put card on the Board",
+                                           keyboard = keyboard
+                                           ))
           detailedChat   <-  Scenario.eval(chat.details)
           playerId       =   detailedChat.id
           requestString  <-  Scenario.expect(text)
@@ -158,15 +177,18 @@ object BotService {
 
             case Error(_) =>
               Scenario.eval(chat.send(response.asJson.spaces2)) >>
-                playerMakesTurn(chat, gameService)
+                playerMakesTurn(chat, gameService, gameStateData)
             case _ => Scenario.eval(chat.send("Wrong response from server"))
           }
         } yield ()
+      }
 
-      private def playerMakesAttack(chat: Chat, gameService: GameService[F]): Scenario[F, Unit] =
+      private def playerMakesAttack(chat: Chat, gameService: GameService[F], gameStateData: GameStateData): Scenario[F, Unit] = {
+        val buttons = gameStateData.hand.cards.map(card => MakeTurnWithCard(card).asJson.noSpaces)
+        val keyboard = KeyboardService.createFromList(buttons)
         for {
           _              <-  Scenario.eval(chat.send("Now it's time to ATTACK!"))
-          _              <-  Scenario.eval(chat.send("Put card on the Board:"))
+          _              <-  Scenario.eval(chat.send("Put card on the Board:", keyboard = keyboard))
           detailedChat   <-  Scenario.eval(chat.details)
           playerId       =   detailedChat.id
           requestString  <-  Scenario.expect(text)
@@ -179,7 +201,7 @@ object BotService {
 
             case gameData: GameStateData =>
               showGameDataToPlayer(chat, gameData) >>
-                defineWhoseTurn(chat, gameService)
+                defineWhoseTurn(chat, gameService, gameData)
 
             case totals: Totals =>
               showTotalsToPlayer(chat, totals) >>
@@ -189,10 +211,11 @@ object BotService {
 
             case Error(_) =>
               Scenario.eval(chat.send(response.asJson.spaces2)) >>
-                playerMakesAttack(chat, gameService)
+                playerMakesAttack(chat, gameService, gameStateData)
             case _ => Scenario.eval(chat.send("Wrong response from server"))
           }
         } yield ()
+      }
 
 
       private def botMakesAttack(chat: Chat, gameService: GameService[F]): Scenario[F, Unit] =
@@ -205,7 +228,7 @@ object BotService {
 
             case gameData: GameStateData =>
               showGameDataToPlayer(chat, gameData) >>
-                defineWhoseTurn(chat, gameService)
+                defineWhoseTurn(chat, gameService, gameData)
 
             case totals: Totals =>
               showTotalsToPlayer(chat, totals) >>
@@ -230,7 +253,7 @@ object BotService {
 
             case gameData: GameStateData =>
               showGameDataToPlayer(chat, gameData) >>
-                playerMakesAttack(chat, gameService)
+                playerMakesAttack(chat, gameService, gameData)
 
             case Error(_) =>
               Scenario.eval(chat.send(response.asJson.spaces2)) >>
