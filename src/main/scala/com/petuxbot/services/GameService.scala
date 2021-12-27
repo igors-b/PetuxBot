@@ -36,6 +36,8 @@ object GameService {
         newState match {
           case Left(gameError) => (oldState, Error(gameError))
           case Right(newState) => newState.players.find(_.id == playerId) match {
+            case None         =>
+              (oldState, Error(WrongPlayerId(s"Player with provided playerId: $playerId not found in modified game state list of players")))
             case Some(player) =>
               val playerCardsLeft = newState.players.map(_.cards.size)
               val isGameOver      = newState.players.map(_.score.value).exists(_ <= 0)
@@ -50,7 +52,6 @@ object GameService {
               if (isGameOver) gameOver
               else if (isEmptyHands) endRound
               else continueRound
-            case None         => (oldState, Error(WrongPlayerId(s"Player with provided playerId: $playerId not found in modified game state list of players")))
           }
         }
 
@@ -60,13 +61,14 @@ object GameService {
                           playerId: Long
                         ): (GameState, Response) =
         newState match {
-          case Right(newState) => newState.players.find(_.id == playerId) match {
+          case Left(gameError) =>  (oldState, Error(gameError))
+          case Right(newState) =>  newState.players.find(_.id == playerId) match {
             case Some(player) =>
               val scores = newState.players.map(player => s"${player.name}: ${player.score.value}")
               (newState, GameStateData(newState.board, player.hand, newState.trumpCard, scores))
-            case None        => (oldState, Error(WrongPlayerId(s"Player with provided playerId: $playerId not found in modified game state list of players")))
+            case None =>
+              (oldState, Error(WrongPlayerId(s"Player with provided playerId: $playerId not found in modified game state list of players")))
           }
-          case Left(gameError) =>  (oldState, Error(gameError))
         }
 
       def process(command: Command): F[Response] =
@@ -80,9 +82,9 @@ object GameService {
 
           case BotMakesAttack(playerId) =>
             state.modify(oldState => {
-              val players = oldState.players
-              val board = oldState.board
-              val botOpt = players.find(_.id == BotId)
+              val players   = oldState.players
+              val board     = oldState.board
+              val botOpt    = players.find(_.id == BotId)
               val gameState = for {
                 bot              <- botOpt.toRight(WrongPlayerId(s"Bot with provided playerId: $BotId not found in game state list of players"))
                 others           =  players.diff(List(bot))
@@ -111,15 +113,14 @@ object GameService {
               )
 
               resolveAttack(oldState, gameState, playerId)
-
             })
 
           case BotMakesTurn(playerId) =>
             state.modify(oldState => {
-              val players = oldState.players
-              val board = Board.Empty
-              val botOpt = players.find(_.id == BotId)
-              val scores     = players.map(_.score)
+              val players   = oldState.players
+              val board     = Board.Empty
+              val botOpt    = players.find(_.id == BotId)
+              val scores    = players.map(_.score)
               val gameState = for {
                 bot              <- botOpt.toRight(WrongPlayerId(s"Bot with provided playerId: $BotId not found in game state list of players"))
                 card             <- bot.cards.find(card => isCardValidToMakeTurn(card, bot, scores)).toRight(CardValidationError("Card validation failed during getting valid card to make bot's turn with card"))
@@ -127,12 +128,12 @@ object GameService {
                 updatedBot       =  bot.copy(hand = bot.hand.removeCard(card))
                 updatedPlayers   =  others :+ updatedBot
               } yield GameState(
-                deck = oldState.deck,
-                board = board.addCard(card).setCardToHit(card).setStrongestCard(card, BotId),
+                deck        = oldState.deck,
+                board       = board.addCard(card).setCardToHit(card).setStrongestCard(card, BotId),
                 discardPile = oldState.discardPile,
-                trumpCard = oldState.trumpCard,
-                whoseTurn = players.find(_.id == playerId),
-                players = updatedPlayers
+                trumpCard   = oldState.trumpCard,
+                whoseTurn   = players.find(_.id == playerId),
+                players     = updatedPlayers
               )
 
               resolveRequest(oldState, gameState, playerId)
@@ -140,8 +141,8 @@ object GameService {
 
           case ChangeCardsForPlayer(playerId, cards) =>
             state.modify(oldState => {
-              val players = oldState.players
-              val deck = oldState.deck
+              val players   = oldState.players
+              val deck      = oldState.deck
               val playerOpt = players.find(_.id == playerId)
               val gameState = for {
                 player                   <- playerOpt.toRight(WrongPlayerId(s"Player with provided playerId: $playerId not found in game state list of players"))
@@ -198,8 +199,8 @@ object GameService {
 
           case PlayerMakesAttack(playerId, card) =>
             state.modify(oldState => {
-              val players = oldState.players
-              val board = oldState.board
+              val players   = oldState.players
+              val board     = oldState.board
               val playerOpt = players.find(_.id == playerId)
               val gameState = for {
                 player                <- playerOpt.toRight(WrongPlayerId(s"Player with provided playerId: $playerId not found in game state list of players"))
@@ -246,8 +247,8 @@ object GameService {
                     case (player, newHand) => player.addCardsToHand(newHand.cards)
                   }
                 } yield GameState(
-                  deck = deck,
-                  players = playersWithDealtHands,
+                  deck      = deck,
+                  players   = playersWithDealtHands,
                   trumpCard = trumpCard,
                   whoseTurn = whoseTurn
                 )
