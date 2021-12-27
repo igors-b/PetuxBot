@@ -48,22 +48,36 @@ object BotService {
           request => pf(request) orElse Scenario.pure(Error(WrongRequest))
         )
 
-      private def showGameDataToPlayer(chat: Chat, gameData: GameStateData): Scenario[F, TextMessage] = {
+      private def showBoardToPlayer(chat: Chat, gameStateData: GameStateData): Scenario[F, TextMessage] = {
         Scenario.eval(chat.send("Board is:")) >>
-          Scenario.eval(chat.send(gameData.board.asJson.spaces2)) >>
-          Scenario.eval(chat.send("Trump card is:")) >>
-          Scenario.eval(chat.send(gameData.trumpCard.asJson.spaces2)) >>
-          Scenario.eval(chat.send("Game score:")) >>
-          Scenario.eval(chat.send(gameData.scores.asJson.spaces2))
+          Scenario.eval(chat.send(gameStateData.board.asJson.spaces2))
       }
 
-      private def showCardsToPlayer(chat: Chat, gameData: GameStateData): Scenario[F, TextMessage] = {
+      private def showTrumpCardToPlayer(chat: Chat, gameStateData: GameStateData): Scenario[F, TextMessage] = {
+        Scenario.eval(chat.send("Trump card is:")) >>
+          Scenario.eval(chat.send(gameStateData.trumpCard.asJson.spaces2))
+      }
+
+      private def showScoreToPlayer(chat: Chat, gameStateData: GameStateData): Scenario[F, TextMessage] = {
+        Scenario.eval(chat.send("Game score:")) >>
+          Scenario.eval(chat.send(gameStateData.scores.asJson.spaces2))
+      }
+
+      private def showBoardAndTrumpCardToPlayer(chat: Chat, gameStateData: GameStateData): Scenario[F, TextMessage] = {
+        showBoardToPlayer(chat, gameStateData)  >>
+        showTrumpCardToPlayer(chat, gameStateData)
+      }
+
+      private def showBoardAndScoreToPlayer(chat: Chat, gameStateData: GameStateData): Scenario[F, TextMessage] = {
+        showBoardToPlayer(chat, gameStateData)  >>
+          showScoreToPlayer(chat, gameStateData)
+      }
+
+      private def showCardsToPlayer(chat: Chat, gameStateData: GameStateData): Scenario[F, TextMessage] = {
           Scenario.eval(chat.send(s"Your cards:")) >>
-          Scenario.eval(chat.send(gameData.hand.asJson.spaces2)) >>
-          Scenario.eval(chat.send("Trump card is:")) >>
-          Scenario.eval(chat.send(gameData.trumpCard.asJson.spaces2)) >>
-          Scenario.eval(chat.send("Game score:")) >>
-          Scenario.eval(chat.send(gameData.scores.asJson.spaces2))
+          Scenario.eval(chat.send(gameStateData.hand.asJson.spaces2)) >>
+          showTrumpCardToPlayer(chat, gameStateData) >>
+          showScoreToPlayer(chat, gameStateData)
       }
 
       private def showTotalsToPlayer(chat: Chat, totals: Totals): Scenario[F, TextMessage] = {
@@ -170,7 +184,7 @@ object BotService {
           _  <- response match {
 
             case gameData: GameStateData =>
-              showGameDataToPlayer(chat, gameData) >>
+              showBoardToPlayer(chat, gameData) >>
                 botMakesAttack(chat, gameService)
 
             case Error(_) =>
@@ -198,7 +212,7 @@ object BotService {
           _ <- response match {
 
             case gameData: GameStateData =>
-              showGameDataToPlayer(chat, gameData) >>
+              showBoardAndScoreToPlayer(chat, gameData) >>
                 defineWhoseTurn(chat, gameService, gameData)
 
             case totals: Totals =>
@@ -225,7 +239,7 @@ object BotService {
           _            <- response match {
 
             case gameData: GameStateData =>
-              showGameDataToPlayer(chat, gameData) >>
+              showBoardAndScoreToPlayer(chat, gameData) >>
                 defineWhoseTurn(chat, gameService, gameData)
 
             case totals: Totals =>
@@ -250,7 +264,7 @@ object BotService {
           _            <- response match {
 
             case gameData: GameStateData =>
-              showGameDataToPlayer(chat, gameData) >>
+              showBoardAndTrumpCardToPlayer(chat, gameData) >>
                 playerMakesAttack(chat, gameService, gameData)
 
             case Error(_) =>
