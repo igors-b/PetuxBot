@@ -15,7 +15,7 @@ object Main extends IOApp {
       result  <- Stream
         .resource(TelegramClient.global[IO](Token))
         .flatMap { implicit client =>
-          val botService = BotService[IO](/*gameService, */deckService)
+          val botService = BotService[IO](deckService)
           Bot.polling[IO].follow(botService.greetings)
         }
         .compile

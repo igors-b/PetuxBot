@@ -140,8 +140,8 @@ object BotService {
           }
           _ <- response match {
 
-            case gameData: ContinueRound =>
-                defineWhoseTurn(chat, gameService, gameData)
+            case continueRound: ContinueRound =>
+                defineWhoseTurn(chat, gameService, continueRound)
 
             case Error(_) =>
               Scenario.eval(chat.send(response.asJson.spaces2)) >>
@@ -152,7 +152,7 @@ object BotService {
       }
 
 
-      private def defineWhoseTurn(chat: Chat, gameService: GameService[F], gameData: ContinueRound): Scenario[F, Unit] =
+      private def defineWhoseTurn(chat: Chat, gameService: GameService[F], continueRound: ContinueRound): Scenario[F, Unit] =
         for {
           _            <- Scenario.eval(chat.send(s"Requesting playerID whose turn"))
           detailedChat <- Scenario.eval(chat.details)
@@ -160,7 +160,7 @@ object BotService {
           response     <- Scenario.eval(gameService.process(GetPlayerIdWhoseTurn))
           _            <- response match {
             case WhoseTurn(playerId) =>
-              if (playerId == id) playerMakesTurn(chat, gameService, gameData)
+              if (playerId == id) playerMakesTurn(chat, gameService, continueRound)
               else botMakesTurn(chat, gameService)
             case Error(_) => Scenario.eval(chat.send(response.asJson.spaces2))
             case _        => Scenario.eval(chat.send("Wrong response from server"))
