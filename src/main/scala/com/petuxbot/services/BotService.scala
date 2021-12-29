@@ -42,60 +42,6 @@ object BotService {
           }
         } yield ()
 
-      private def getResponse(requestString: String)(pf: PartialFunction[Request, Scenario[F, Response]]): Scenario[F, Response] =
-        Parser.parse(requestString).fold(
-          error   => Scenario.pure(Error(ParsingError(error.getMessage))),
-          request => pf(request) orElse Scenario.pure(Error(WrongRequest))
-        )
-
-      private def showBoardToPlayer(chat: Chat, continueRound: ContinueRound): Scenario[F, TextMessage] = {
-        Scenario.eval(chat.send("Board is:")) >>
-          Scenario.eval(chat.send(continueRound.board.asJson.spaces2))
-      }
-
-      private def showTrumpCardToPlayer(chat: Chat, continueRound: ContinueRound): Scenario[F, TextMessage] = {
-        Scenario.eval(chat.send("Trump card is:")) >>
-          Scenario.eval(chat.send(continueRound.trumpCard.asJson.spaces2))
-      }
-
-      private def showScoreToPlayer(chat: Chat, continueRound: ContinueRound): Scenario[F, TextMessage] = {
-        Scenario.eval(chat.send("Game score:")) >>
-          Scenario.eval(chat.send(continueRound.scores.asJson.spaces2))
-      }
-
-      private def showBoardAndTrumpCardToPlayer(chat: Chat, continueRound: ContinueRound): Scenario[F, TextMessage] = {
-        showBoardToPlayer(chat, continueRound)  >>
-        showTrumpCardToPlayer(chat, continueRound)
-      }
-
-      private def showBoardAndScoreToPlayer(chat: Chat, continueRound: ContinueRound): Scenario[F, TextMessage] = {
-        showBoardToPlayer(chat, continueRound)  >>
-          showScoreToPlayer(chat, continueRound)
-      }
-
-      private def showCardsToPlayer(chat: Chat, continueRound: ContinueRound): Scenario[F, TextMessage] = {
-          Scenario.eval(chat.send(s"Your cards:")) >>
-          Scenario.eval(chat.send(continueRound.hand.asJson.spaces2)) >>
-          showTrumpCardToPlayer(chat, continueRound) >>
-          showScoreToPlayer(chat, continueRound)
-      }
-
-      private def showTotalsToPlayer(chat: Chat, endRound: EndRound): Scenario[F, TextMessage] = {
-        Scenario.eval(chat.send("Board is:")) >>
-          Scenario.eval(chat.send(endRound.board.asJson.spaces2)) >>
-          Scenario.eval(chat.send("Game score:")) >>
-          Scenario.eval(chat.send(endRound.scores.asJson.spaces2))
-      }
-
-      private def showGameResult(chat: Chat, gameOver: GameOver): Scenario[F, TextMessage] = {
-        val keyboard = KeyboardService.create("/start")
-        Scenario.eval(chat.send("Board is:")) >>
-          Scenario.eval(chat.send(gameOver.board.asJson.spaces2)) >>
-          Scenario.eval(chat.send("Game score:")) >>
-          Scenario.eval(chat.send(gameOver.scores.asJson.spaces2)) >>
-          Scenario.eval(chat.send("GAME IS OVER!", keyboard = keyboard))
-      }
-
 
       private def start(chat: Chat, gameService: GameService[F]): Scenario[F, Unit] = {
         val keyboard = KeyboardService.create("\"deal\"")
@@ -287,5 +233,61 @@ object BotService {
             case _ => Scenario.eval(chat.send("Wrong response from server"))
           }
         } yield ()
+
+
+      private def getResponse(requestString: String)(pf: PartialFunction[Request, Scenario[F, Response]]): Scenario[F, Response] =
+        Parser.parse(requestString).fold(
+          error   => Scenario.pure(Error(ParsingError(error.getMessage))),
+          request => pf(request) orElse Scenario.pure(Error(WrongRequest))
+        )
+
+
+      private def showBoardToPlayer(chat: Chat, continueRound: ContinueRound): Scenario[F, TextMessage] = {
+        Scenario.eval(chat.send("Board is:")) >>
+          Scenario.eval(chat.send(continueRound.board.asJson.spaces2))
+      }
+
+      private def showTrumpCardToPlayer(chat: Chat, continueRound: ContinueRound): Scenario[F, TextMessage] = {
+        Scenario.eval(chat.send("Trump card is:")) >>
+          Scenario.eval(chat.send(continueRound.trumpCard.asJson.spaces2))
+      }
+
+      private def showScoreToPlayer(chat: Chat, continueRound: ContinueRound): Scenario[F, TextMessage] = {
+        Scenario.eval(chat.send("Game score:")) >>
+          Scenario.eval(chat.send(continueRound.scores.asJson.spaces2))
+      }
+
+      private def showBoardAndTrumpCardToPlayer(chat: Chat, continueRound: ContinueRound): Scenario[F, TextMessage] = {
+        showBoardToPlayer(chat, continueRound)  >>
+          showTrumpCardToPlayer(chat, continueRound)
+      }
+
+      private def showBoardAndScoreToPlayer(chat: Chat, continueRound: ContinueRound): Scenario[F, TextMessage] = {
+        showBoardToPlayer(chat, continueRound)  >>
+          showScoreToPlayer(chat, continueRound)
+      }
+
+      private def showCardsToPlayer(chat: Chat, continueRound: ContinueRound): Scenario[F, TextMessage] = {
+        Scenario.eval(chat.send(s"Your cards:")) >>
+          Scenario.eval(chat.send(continueRound.hand.asJson.spaces2)) >>
+          showTrumpCardToPlayer(chat, continueRound) >>
+          showScoreToPlayer(chat, continueRound)
+      }
+
+      private def showTotalsToPlayer(chat: Chat, endRound: EndRound): Scenario[F, TextMessage] = {
+        Scenario.eval(chat.send("Board is:")) >>
+          Scenario.eval(chat.send(endRound.board.asJson.spaces2)) >>
+          Scenario.eval(chat.send("Game score:")) >>
+          Scenario.eval(chat.send(endRound.scores.asJson.spaces2))
+      }
+
+      private def showGameResult(chat: Chat, gameOver: GameOver): Scenario[F, TextMessage] = {
+        val keyboard = KeyboardService.create("/start")
+        Scenario.eval(chat.send("Board is:")) >>
+          Scenario.eval(chat.send(gameOver.board.asJson.spaces2)) >>
+          Scenario.eval(chat.send("Game score:")) >>
+          Scenario.eval(chat.send(gameOver.scores.asJson.spaces2)) >>
+          Scenario.eval(chat.send("GAME IS OVER!", keyboard = keyboard))
+      }
     }
 }
